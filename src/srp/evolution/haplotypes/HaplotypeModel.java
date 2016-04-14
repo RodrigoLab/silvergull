@@ -149,7 +149,6 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 
         // initialize the alignment from the given list of sequences
         initializeWithSequenceList(sequences, true);
-
         if (taxonSetInput.get() != null && taxonSetInput.get().getTaxonCount() > 0) {
             sortByTaxonSet(taxonSetInput.get());
         }

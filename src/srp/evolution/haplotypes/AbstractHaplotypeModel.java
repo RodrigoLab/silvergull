@@ -1,11 +1,11 @@
 package srp.evolution.haplotypes;
 
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -20,13 +20,9 @@ import beast.evolution.alignment.TaxonSet;
 import beast.evolution.datatype.DataType;
 import beast.evolution.datatype.Nucleotide;
 import beast.evolution.datatype.StandardData;
-import beast.util.AddOnManager;
 
 
 public abstract class AbstractHaplotypeModel extends StateNode {
-// option 1? reimplement everything?
-	// option 2. implement whatever is needed for treelikelihood
-	// option 3. copy/paste Alignment?
 	
 
 	public static final DataType DATA_TYPE = new Nucleotide(); 
@@ -388,16 +384,19 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 
         if (isAscertained) {
             //From AscertainedAlignment
-            int from = excludefromInput.get();
-            int to = excludetoInput.get();
-            int every = excludeeveryInput.get();
-            excludedPatterns = new HashSet<>();
-            for (int i = from; i < to; i += every) {
-                int patternIndex_ = patternIndex[i];
-                // reduce weight, so it does not confuse the tree likelihood
-                patternWeight[patternIndex_] = 0;
-                excludedPatterns.add(patternIndex_);
-            }
+        	Log.warning.println("WARNING: ascertainment correction is NOT supported!");
+//            int from = excludefromInput.get();
+//            int to = excludetoInput.get();
+//            int every = excludeeveryInput.get();
+//            excludedPatterns = new HashSet<>();
+//            for (int i = from; i < to; i += every) {
+//                int patternIndex_ = patternIndex[i];
+//                // reduce weight, so it does not confuse the tree likelihood
+//                patternWeight[patternIndex_] = 0;
+//                excludedPatterns.add(patternIndex_);
+//            }           
+
+
         } else {
         	// sanity check
             int from = excludefromInput.get();
@@ -569,10 +568,10 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         calcPatterns(true);
     }
 
-        /**
-         * calculate patterns from sequence data
-         * *
-         */
+    /**
+     * calculate patterns from sequence data
+     * *
+     */
     private void calcPatterns(boolean log) {
         int taxonCount = counts.size();
         int siteCount = counts.get(0).size();
@@ -596,7 +595,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         int[] weights = new int[siteCount];
         weights[0] = 1;
         for (int i = 1; i < siteCount; i++) {
-            if (usingTipLikelihoods || comparator.compare(data[i - 1], data[i]) != 0) {
+            if (true || usingTipLikelihoods || comparator.compare(data[i - 1], data[i]) != 0) {
             	// In the case where we're using tip probabilities, we need to treat each 
             	// site as a unique pattern, because it could have a unique probability vector.
                 patterns++;
@@ -604,7 +603,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
             }
             weights[patterns - 1]++;
         }
-
+        
         // reserve memory for patterns
         patternWeight = new int[patterns];
         sitePatterns = new int[patterns][taxonCount];
@@ -629,7 +628,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
                 patternWeight[patternIndex[i]] += siteWeights[i];
             }
         }
-
+        
         // determine maximum state count
         // Usually, the state count is equal for all sites,
         // though for SnAP analysis, this is typically not the case.
@@ -668,6 +667,8 @@ public abstract class AbstractHaplotypeModel extends StateNode {
             }
             if (log) Log.info.println(" removed " + removedSites + " sites ");
         }
+
+        
     } // calcPatterns
 
     /**
