@@ -18,7 +18,7 @@ import beast.evolution.likelihood.LikelihoodCore;;
 import beast.evolution.likelihood.TreeLikelihood;
 //import beast.inference.model.Model;
 
-
+@Deprecated
 public class TreeLikelihoodExt extends TreeLikelihood {
 
 	private static final boolean DEBUG = false;

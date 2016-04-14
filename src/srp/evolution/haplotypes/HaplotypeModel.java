@@ -3,14 +3,22 @@ package srp.evolution.haplotypes;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.w3c.dom.Node;
 
+import beast.core.Input;
 import beast.core.StateNode;
+import beast.core.Input.Validate;
+import beast.core.util.Log;
 import beast.evolution.alignment.Alignment;
+import beast.evolution.alignment.Sequence;
 import beast.evolution.datatype.DataType;
 import beast.evolution.datatype.Nucleotide;
+import beast.evolution.tree.Tree;
+import beast.util.AddOnManager;
+import beast.util.TreeParser;
 import srp.evolution.OperationRecord;
 import srp.evolution.OperationType;
 import srp.evolution.shortreads.ShortReadMapping;
@@ -28,53 +36,125 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	public static final DataType DATA_TYPE = new Nucleotide();
 
 //	private static final int NUCLEOTIDE_STATES[] = Nucleotide.NUCLEOTIDE_STATES;
-	private static final int STATE_COUTN = DATA_TYPE.getStateCount();
-
-	private static final String MODEL_NAME = "HaplotypeModel";
+	private static final int STATE_COUNT = DATA_TYPE.getStateCount();
+	
+	public static final String TAXON_PREFIX = "hap_";
 	
 	private static final boolean DEBUG = false;
 
+	@Deprecated
+	private static final String MODEL_NAME = "HaplotypeModel";
+
+	@Deprecated
+	public Input<List<Sequence>> sequenceInput =
+            new Input<>("sequence", "sequence and meta data for particular taxon", new ArrayList<>(), Validate.OPTIONAL);
+
+	final public Input<List<Haplotype>> haplotypeInput =
+            new Input<>("sequence", "sequence and meta data for particular taxon", new ArrayList<>(), Validate.OPTIONAL);
+
+	
+	
 	private ShortReadMapping srpMap;
 //	private boolean DEBUG = true;
 
-	public static final String TAXON_PREFIX = "hap_";
 	
 	protected OperationRecord operationRecord;
+
 	
 	private void initHaplotypes() {
-		for (int i = 0; i < sequenceCount; i++) {
+		for (int i = 0; i < haplotypeCount; i++) {
 			String taxon = TAXON_PREFIX + i;
-			Haplotype haplotype = new Haplotype(taxon, sequenceLength);
+			Haplotype haplotype = new Haplotype(taxon, haplotypeLength);
 			setHaplotype(i, haplotype);
 		}
-
 	}
-	
-//	public HaplotypeModel(String[] sequences){
-//		this(AlignmentUtils.createAlignment(sequences));
-//	}
-
-	
 	public HaplotypeModel(int hapCount, int hapLength) {
 		super(MODEL_NAME, hapCount, hapLength);
 		initHaplotypes();
 //		storeEverything();
 	}
 	
+	
 	public HaplotypeModel(Alignment trueAlignment) {
 		this(trueAlignment.getTaxonCount(), trueAlignment.getSiteCount());
 
-		List<String> taxaNames = trueAlignment.getTaxaNames();
+//		List<String>
+		taxaNames = trueAlignment.getTaxaNames();
 		for (int i = 0; i < taxaNames.size(); i++) {
 			Haplotype haplotype = new Haplotype(trueAlignment.getSequenceAsString(taxaNames.get(i)));
 			setHaplotype(i, haplotype);
 		}
+		
+		//HACK:
+		sequenceInput = trueAlignment.sequenceInput;
+		initAndValidate();
 //		storeEverything();
 	}
 	
 	@Override
 	public void initAndValidate() {
-		// TODO Auto-generated method stub
+		System.out.println("initAndValidate HapoltyeModel");
+		if (haplotypes.length != haplotypeCount){
+			throw new IllegalArgumentException("The number of haplotypes does not match!!");
+		}
+//
+
+        if (siteWeightsInput.get() != null) {
+            String str = siteWeightsInput.get().trim();
+            String[] strs = str.split(",");
+            siteWeights = new int[strs.length];
+            for (int i = 0; i < strs.length; i++) {
+                siteWeights[i] = Integer.parseInt(strs[i].trim());
+            }
+        }
+
+        // determine data type, either user defined or one of the standard ones
+        if (userDataTypeInput.get() != null) {
+            m_dataType = userDataTypeInput.get();
+        } else {
+            if (types.indexOf(dataTypeInput.get()) < 0) {
+//                throw new IllegalArgumentException("data type + '" + dataTypeInput.get() + "' cannot be found. " +
+//                        "Choose one of " + Arrays.toString(types.toArray(new String[0])));
+            }
+            // seems to spend forever in there??
+//            List<String> dataTypes = AddOnManager.find(beast.evolution.datatype.DataType.class, IMPLEMENTATION_DIR);
+//            for (String dataTypeName : dataTypes) {
+//                DataType dataType;
+//				try {
+//					dataType = (DataType) Class.forName(dataTypeName).newInstance();
+//	                if (dataTypeInput.get().equals(dataType.getTypeDescription())) {
+//	                    m_dataType = dataType;
+//	                    break;
+//	                }
+//				} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+//					throw new IllegalArgumentException(e.getMessage());
+//				}
+//            }
+        }
+        m_dataType = DATA_TYPE;
+        // initialize the sequence list
+        if (sequenceInput.get().size() > 0) {
+            sequences = sequenceInput.get();
+        } else {
+            // alignment defined by a map of id -> sequence
+        	java.util.Map<String, String> map = null;
+            List<String> taxa = new ArrayList<>();
+            taxa.addAll(map.keySet());
+            sequences.clear();
+            for (String key : taxa) {
+                String sequence = map.get(key);
+                sequences.add(new Sequence(key, sequence));
+            }
+        }
+
+        // initialize the alignment from the given list of sequences
+        initializeWithSequenceList(sequences, true);
+
+        if (taxonSetInput.get() != null && taxonSetInput.get().getTaxonCount() > 0) {
+            sortByTaxonSet(taxonSetInput.get());
+        }
+        Log.info.println(toString(false));
+    
 		
 	}
 	
@@ -93,7 +173,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	public HaplotypeModel(int noOfRecoveredHaplotype, ShortReadMapping srpMap) {
 			this(noOfRecoveredHaplotype, srpMap.getLength());
 			this.srpMap = srpMap;
-			for (int i = 0; i < sequenceCount; i++) {
+			for (int i = 0; i < haplotypeCount; i++) {
 				char[] randHap = this.srpMap.getSemiRandHaplotype2();
 //				char[] randHap = this.srpMap.getRandHaplotype();
 //				System.out.println(String.valueOf(randHap));
@@ -328,7 +408,20 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		
 		return haplotypeModel;
 
-	}	
+	}
+	
+	public static Alignment CreateAlignmentFromHaplotypeModel(HaplotypeModel hm){
+		
+		ArrayList<Sequence> seqList = new ArrayList<>();
+		for (int i = 0; i < hm.getHaplotypeCount(); i++) {
+			Sequence s = new Sequence("hap_"+i, hm.getHaplotypeString(i));
+			seqList.add(s);
+		}
+		Alignment ali = new Alignment(seqList, DATA_TYPE.getTypeDescription());
+//		ali.
+		return ali;
+	}
+	
 //
 //	public void simulateSequence(TreeLikelihoodExt treeLikelihood) {
 //
@@ -397,7 +490,11 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 //		}
 //		
 //	}
-
+	
+	////////////////////////////////////////////////////
+	//// implement functions from StateNode
+	///////////////////////////////////////////////////
+	
 	@Override
 	public int getDimension() {
 		// TODO Auto-generated method stub
@@ -431,34 +528,109 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		return null;
 	}
 
-	@Override
-	public void assignTo(StateNode other) {
-		// TODO Auto-generated method stub
-		
-	}
 
-	@Override
-	public void assignFrom(StateNode other) {
+    /**
+     * copy of all values into existing tree *
+     */
+    @Override
+    public void assignTo(final StateNode other) {
 		// TODO Auto-generated method stub
-		
-	}
+//        final Tree tree = (Tree) other;
+//        final Node[] nodes = new Node[nodeCount];
+//        listNodes(tree.root, nodes);
+//        tree.setID(getID());
+//        //tree.index = index;
+//        root.assignTo(nodes);
+//        tree.root = nodes[root.getNr()];
+//        tree.nodeCount = nodeCount;
+//        tree.internalNodeCount = internalNodeCount;
+//        tree.leafNodeCount = leafNodeCount;
+    }
 
-	@Override
-	public void assignFromFragile(StateNode other) {
+    /**
+     * copy of all values from existing tree *
+     */
+    @Override
+    public void assignFrom(final StateNode other) {
 		// TODO Auto-generated method stub
-		
-	}
+//        final Tree tree = (Tree) other;
+//        final Node[] nodes = new Node[tree.getNodeCount()];//tree.getNodesAsArray();
+//        for (int i = 0; i < tree.getNodeCount(); i++) {
+//            nodes[i] = newNode();
+//        }
+//        setID(tree.getID());
+//        //index = tree.index;
+//        root = nodes[tree.root.getNr()];
+//        root.assignFrom(nodes, tree.root);
+//        root.parent = null;
+//        nodeCount = tree.nodeCount;
+//        internalNodeCount = tree.internalNodeCount;
+//        leafNodeCount = tree.leafNodeCount;
+//        initArrays();
+    }
+
+    /**
+     * as assignFrom, but only copy tree structure *
+     */
+    @Override
+    public void assignFromFragile(final StateNode other) {
+		// TODO Auto-generated method stub
+//        final Tree tree = (Tree) other;
+//        if (m_nodes == null) {
+//            initArrays();
+//        }
+//        root = m_nodes[tree.root.getNr()];
+//        final Node[] otherNodes = tree.m_nodes;
+//        final int rootNr = root.getNr();
+//        assignFrom(0, rootNr, otherNodes);
+//        root.height = otherNodes[rootNr].height;
+//        root.parent = null;
+//        if (otherNodes[rootNr].getLeft() != null) {
+//            root.setLeft(m_nodes[otherNodes[rootNr].getLeft().getNr()]);
+//        } else {
+//            root.setLeft(null);
+//        }
+//        if (otherNodes[rootNr].getRight() != null) {
+//            root.setRight(m_nodes[otherNodes[rootNr].getRight().getNr()]);
+//        } else {
+//            root.setRight(null);
+//        }
+//        assignFrom(rootNr + 1, nodeCount, otherNodes);
+    }
+
 
 	@Override
 	public void fromXML(Node node) {
 		// TODO Auto-generated method stub
-		
+
+    /**
+     * reconstruct tree from XML fragment in the form of a DOM node *
+     */
+
+//        final String newick = node.getTextContent();
+//        final TreeParser parser = new TreeParser();
+//        try {
+//            parser.thresholdInput.setValue(1e-10, parser);
+//        } catch (Exception e1) {
+//            e1.printStackTrace();
+//        }
+//        try {
+//            parser.offsetInput.setValue(0, parser);
+//            setRoot(parser.parseNewick(newick));
+//        } catch (Exception e) {
+//            // TODO Auto-generated catch block
+//            e.printStackTrace();
+//        }
+//        initArrays();
+//    	
 	}
 
 	@Override
 	public int scale(double scale) {
-		// TODO Auto-generated method stub
-		return 0;
+        // nothing to do
+        Log.warning.println("Attempt to scale HapoltypeModel " + getID() + "  has no effect");
+        return 0;
+
 	}
 
 	@Override

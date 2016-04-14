@@ -1,25 +1,6 @@
 package srp.evolution.haplotypes;
 
-import srp.evolution.AbstractAlignmentModel;
-
 import java.io.PrintStream;
-
-import beast.core.StateNode;
-import beast.evolution.alignment.Alignment;
-import srp.evolution.OperationRecord;
-//import beast.evolution.alignment.PatternList;
-import beast.evolution.alignment.Sequence;
-import beast.evolution.alignment.TaxonSet;
-import beast.evolution.datatype.DataType;
-import beast.evolution.datatype.Nucleotide;
-import beast.evolution.tree.Node;
-import beast.evolution.tree.Tree;
-import beast.evolution.tree.TreeInterface;
-//import beast.evolution.util.Taxon;
-
-
-
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,12 +9,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import beast.core.Description;
 import beast.core.Input;
 import beast.core.Input.Validate;
-import beast.core.parameter.Map;
+import beast.core.StateNode;
 import beast.core.util.Log;
+import beast.evolution.alignment.Alignment;
+//import beast.evolution.alignment.PatternList;
+import beast.evolution.alignment.Sequence;
+import beast.evolution.alignment.TaxonSet;
 import beast.evolution.datatype.DataType;
+import beast.evolution.datatype.Nucleotide;
 import beast.evolution.datatype.StandardData;
 import beast.util.AddOnManager;
 
@@ -43,23 +28,20 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 	// option 2. implement whatever is needed for treelikelihood
 	// option 3. copy/paste Alignment?
 	
-//	private static final long serialVersionUID = -214692337132875593L;
 
-//	protected int haplotypeLength;
-//	protected int haplotypeCount;
 	public static final DataType DATA_TYPE = new Nucleotide(); 
 	
 	protected Haplotype[] haplotypes;
-	protected int sequenceCount;
-	protected int sequenceLength;
+	protected int haplotypeCount;
+	protected int haplotypeLength;
 
 	
 	public AbstractHaplotypeModel(String name, int hapCount, int hapLength) {
 //		super(name);
 
-		this.sequenceCount = hapCount;
-		this.sequenceLength = hapLength;
-		haplotypes = new Haplotype[sequenceCount];
+		this.haplotypeCount = hapCount;
+		this.haplotypeLength = hapLength;
+		haplotypes = new Haplotype[haplotypeCount];
 	}
 
 
@@ -76,11 +58,11 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 	}
 	
 	public int getHaplotypeLength() {
-		return sequenceLength;
+		return haplotypeLength;
 	}
 
 	public int getHaplotypeCount() {
-		return sequenceCount;
+		return haplotypeCount;
 	}
 
 
@@ -113,24 +95,18 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     	//TODO: FIX THIS
     }
 
-    /**
-     * Gets the weight of a site pattern (always 1.0)
-     */
-//    @Override
-	public double getPatternWeight(int patternIndex) {
-        return 1.0;
-    }
 
-    /**
-     * @return the array of pattern weights
-     */
-//    @Override
-	public double[] getPatternWeights() {
-        double[] weights = new double[getHaplotypeCount()];
-        for (int i = 0; i < weights.length; i++)
-            weights[i] = 1.0;
-        return weights;
-    }
+
+//    /**
+//     * @return the array of pattern weights
+//     */
+////    @Override
+//	public double[] getPatternWeights() {
+//        double[] weights = new double[getHaplotypeCount()];
+//        for (int i = 0; i < weights.length; i++)
+//            weights[i] = 1.0;
+//        return weights;
+//    }
 
 	
     /**
@@ -144,31 +120,30 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 
 	
     // **************************************************************
-    // Alignment IMPLEMENTATION
+    // Other old IMPLEMENTATION
     // **************************************************************
-
-
-
 	
-	/**
-	 * call getHaplotypeString(sequenceIndex);
-	 */
-//	@Override
-	public String getAlignedSequenceString(int sequenceIndex) {
-		
-		return haplotypes[sequenceIndex].getSequenceString();
-	}
+//	/**
+//	 * call getHaplotypeString(sequenceIndex);
+//	 */
+////	@Override
+//	public String getAlignedSequenceString(int sequenceIndex) {
+//		
+//		return haplotypes[sequenceIndex].getSequenceString();
+//	}
+//
+//	/**
+//	 * call getHaplotypeString(sequenceIndex);
+//	 */
+////	@Override
+//	public String getUnalignedSequenceString(int sequenceIndex) {
+//		
+//		return haplotypes[sequenceIndex].getSequenceString();
+//	}
 
-	/**
-	 * call getHaplotypeString(sequenceIndex);
-	 */
-//	@Override
-	public String getUnalignedSequenceString(int sequenceIndex) {
-		
-		return haplotypes[sequenceIndex].getSequenceString();
-	}
-
-
+	// **************************************************************
+	// Loggable beast.core.loggable
+	// **************************************************************
 
     @Override
 	public void init(PrintStream out) {
@@ -207,299 +182,234 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         out.print("End Haplotype;");
     }
 
-////////////////////////////////////////////
-// Everything from Alignment, we don't need most of them
-   
+    
+    // ***************************************************************
+    // Copied from Alignment, don't need most of them
+    // ***************************************************************
+    
 
-//    @Description("Class representing alignment data")
+    static List<String> types = new ArrayList<>();
+    /**
+     * default data type *
+     */
+    protected final static String NUCLEOTIDE = "nucleotide";
 
 
-        /**
-         * default data type *
-         */
-        protected final static String NUCLEOTIDE = "nucleotide";
+//    final public Input<List<Sequence>> sequenceInput =
+//            new Input<>("sequence", "sequence and meta data for particular taxon", new ArrayList<>(), Validate.OPTIONAL);
 
-        /**
-         * directory to pick up data types from *
-         */
-        final static String[] IMPLEMENTATION_DIR = {"beast.evolution.datatype"};
+    final public Input<TaxonSet> taxonSetInput =
+            new Input<>("taxa", "An optional taxon-set used only to sort the sequences into the same order as they appear in the taxon-set.", new TaxonSet(), Validate.OPTIONAL);
 
-        /**
-         * list of data type descriptions, obtained from DataType classes *
-         */
-        static List<String> types = new ArrayList<>();
+    final public Input<Integer> stateCountInput = new Input<>("statecount", "maximum number of states in all sequences");
+    final public Input<String> dataTypeInput = new Input<>("dataType", "data type, one of " + types, NUCLEOTIDE, types.toArray(new String[0]));
+    final public Input<DataType.Base> userDataTypeInput = new Input<>("userDataType", "non-standard, user specified data type, if specified 'dataType' is ignored");
+    final public Input<Boolean> stripInvariantSitesInput = new Input<>("strip", "sets weight to zero for sites that are invariant (e.g. all 1, all A or all unkown)", false);
+    final public Input<String> siteWeightsInput = new Input<>("weights", "comma separated list of weights, one for each site in the sequences. If not specified, each site has weight 1");
 
-        static {
-            findDataTypes();
-        }
+    final public Input<Boolean> isAscertainedInput = new Input<>("ascertained", "is true if the alignment allows ascertainment correction, i.e., conditioning the " +
+            "Felsenstein likelihood on excluding constant sites from the alignment", false);
+    /**
+     * Inputs from AscertainedAlignment
+     */
+    final public Input<Integer> excludefromInput = new Input<>("excludefrom", "first site to condition on, default 0", 0);
+    final public Input<Integer> excludetoInput = new Input<>("excludeto", "last site to condition on (but excluding this site), default 0", 0);
+    final public Input<Integer> excludeeveryInput = new Input<>("excludeevery", "interval between sites to condition on (default 1)", 1);
 
-        static public void findDataTypes() {
-            // build up list of data types
-            List<String> m_sDataTypes = AddOnManager.find(beast.evolution.datatype.DataType.class, IMPLEMENTATION_DIR);
-            for (String dataTypeName : m_sDataTypes) {
-                try {
-                    DataType dataType = (DataType) Class.forName(dataTypeName).newInstance();
-                    if (dataType.isStandard()) {
-                        String description = dataType.getTypeDescription();
-                        if (!types.contains(description)) {
-                            types.add(description);
-                        }
-                    }
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
-            }
-        }
+    /**
+     * list of sequences in the alignment *
+     */
+    protected List<Sequence> sequences = new ArrayList<>();
 
-        final public Input<List<Sequence>> sequenceInput =
-                new Input<>("sequence", "sequence and meta data for particular taxon", new ArrayList<>(), Validate.OPTIONAL);
+    /**
+     * list of taxa names defined through the sequences in the alignment *
+     */
+    protected List<String> taxaNames = new ArrayList<>();
 
-        final public Input<TaxonSet> taxonSetInput =
-                new Input<>("taxa", "An optional taxon-set used only to sort the sequences into the same order as they appear in the taxon-set.", new TaxonSet(), Validate.OPTIONAL);
+    /**
+     * list of state counts for each of the sequences, typically these are
+     * constant throughout the whole alignment.
+     */
+    protected List<Integer> stateCounts = new ArrayList<>();
 
-        final public Input<Integer> stateCountInput = new Input<>("statecount", "maximum number of states in all sequences");
-        final public Input<String> dataTypeInput = new Input<>("dataType", "data type, one of " + types, NUCLEOTIDE, types.toArray(new String[0]));
-        final public Input<DataType.Base> userDataTypeInput = new Input<>("userDataType", "non-standard, user specified data type, if specified 'dataType' is ignored");
-        final public Input<Boolean> stripInvariantSitesInput = new Input<>("strip", "sets weight to zero for sites that are invariant (e.g. all 1, all A or all unkown)", false);
-//        final public Input<String> siteWeightsInput = new Input<>("weights", "comma separated list of weights, one for each site in the sequences. If not specified, each site has weight 1");
+    /**
+     * maximum of m_nStateCounts *
+     */
+    protected int maxStateCount;
 
-//        final public Input<Boolean> isAscertainedInput = new Input<>("ascertained", "is true if the alignment allows ascertainment correction, i.e., conditioning the " +
-//                "Felsenstein likelihood on excluding constant sites from the alignment", false);
-        /**
-         * Inputs from AscertainedAlignment
-         */
-//        final public Input<Integer> excludefromInput = new Input<>("excludefrom", "first site to condition on, default 0", 0);
-//        final public Input<Integer> excludetoInput = new Input<>("excludeto", "last site to condition on (but excluding this site), default 0", 0);
-//        final public Input<Integer> excludeeveryInput = new Input<>("excludeevery", "interval between sites to condition on (default 1)", 1);
+    /**
+     * state codes for the sequences *
+     */
+    protected List<List<Integer>> counts = new ArrayList<>();
 
-        /**
-         * list of sequences in the alignment *
-         */
-        protected List<Sequence> sequences = new ArrayList<>();
+    /**
+     * data type, useful for converting String sequence to Code sequence, and back *
+     */
+    protected DataType m_dataType;
 
-        /**
-         * list of taxa names defined through the sequences in the alignment *
-         */
-        protected List<String> taxaNames = new ArrayList<>();
+    /**
+     * weight over the columns of a matrix *
+     */
+    protected int[] patternWeight;
 
-        /**
-         * list of state counts for each of the sequences, typically these are
-         * constant throughout the whole alignment.
-         */
-        protected List<Integer> stateCounts = new ArrayList<>();
+    /**
+     * weights of sites -- assumed 1 for each site if not specified
+     */
+    protected int[] siteWeights = null;
 
-        /**
-         * maximum of m_nStateCounts *
-         */
-        protected int maxStateCount;
+    /**
+     * Probabilities associated with each tip of the tree, for use when the
+     * characters are uncertain.
+     */
+    public List<double[][]> tipLikelihoods = new ArrayList<>(); // #taxa x #sites x #states
+    private boolean usingTipLikelihoods = false;
+    
+    /**
+     * pattern state encodings *
+     */
+    protected int [][] sitePatterns; // #patterns x #taxa
 
-        /**
-         * state codes for the sequences *
-         */
-        protected List<List<Integer>> counts = new ArrayList<>();
+    /**
+     * maps site nr to pattern nr *
+     */
+    protected int[] patternIndex;
 
-        /**
-         * data type, useful for converting String sequence to Code sequence, and back *
-         */
-        protected DataType m_dataType;
+    /**
+     * From AscertainedAlignment
+     */
+    Set<Integer> excludedPatterns;
 
-        /**
-         * weight over the columns of a matrix *
-         */
-        protected int[] patternWeight;
+    /**
+     * A flag to indicate if the alignment is ascertained
+     */
+    public boolean isAscertained;
 
-        /**
-         * weights of sites -- assumed 1 for each site if not specified
-         */
-        protected int[] siteWeights = null;
 
-        /**
-         * Probabilities associated with each tip of the tree, for use when the
-         * characters are uncertain.
-         */
-        public List<double[][]> tipLikelihoods = new ArrayList<>(); // #taxa x #sites x #states
-        private boolean usingTipLikelihoods = false;
-        
-        /**
-         * pattern state encodings *
-         */
-        protected int [][] sitePatterns; // #patterns x #taxa
-
-        /**
-         * maps site nr to pattern nr *
-         */
-        protected int[] patternIndex;
-
-        /**
-         * From AscertainedAlignment
-         */
-        Set<Integer> excludedPatterns;
-
-        /**
-         * A flag to indicate if the alignment is ascertained
-         */
-        public boolean isAscertained;
-
-        
-
-        /**
-         * Constructor for testing purposes.
-         *
-         * @param sequences
-         * @param dataType
-         */
-//        public Alignment(List<Sequence> sequences, String dataType) {
+    /**
+     * Constructor for testing purposes.
+     *
+     * @param sequences
+     * @param dataType
+     */
+    public static void Alignment(List<Sequence> sequences, String dataType) {
 //            for (Sequence sequence : sequences) {
 //                sequenceInput.setValue(sequence, this);
 //            }
 //            dataTypeInput.setValue(dataType, this);
 //            initAndValidate();
-//        }
+    }
 
-//        @Override
-//        public void initAndValidate() {
-//
-//            if (sequenceInput.get().size() == 0 && defaultInput.get().size() == 0) {
-//                throw new IllegalArgumentException("Either a sequence input must be specified, or a map of strings must be specified");
-//            }
-//
-//            if (siteWeightsInput.get() != null) {
-//                String str = siteWeightsInput.get().trim();
-//                String[] strs = str.split(",");
-//                siteWeights = new int[strs.length];
-//                for (int i = 0; i < strs.length; i++) {
-//                    siteWeights[i] = Integer.parseInt(strs[i].trim());
-//                }
-//            }
-//
-//            // determine data type, either user defined or one of the standard ones
-//            if (userDataTypeInput.get() != null) {
-//                m_dataType = userDataTypeInput.get();
-//            } else {
-//                if (types.indexOf(dataTypeInput.get()) < 0) {
-//                    throw new IllegalArgumentException("data type + '" + dataTypeInput.get() + "' cannot be found. " +
-//                            "Choose one of " + Arrays.toString(types.toArray(new String[0])));
-//                }
-//                // seems to spend forever in there??
-//                List<String> dataTypes = AddOnManager.find(beast.evolution.datatype.DataType.class, IMPLEMENTATION_DIR);
-//                for (String dataTypeName : dataTypes) {
-//                    DataType dataType;
-//    				try {
-//    					dataType = (DataType) Class.forName(dataTypeName).newInstance();
-//    	                if (dataTypeInput.get().equals(dataType.getTypeDescription())) {
-//    	                    m_dataType = dataType;
-//    	                    break;
-//    	                }
-//    				} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-//    					throw new IllegalArgumentException(e.getMessage());
-//    				}
-//                }
-//            }
-//
-//            // initialize the sequence list
-//            if (sequenceInput.get().size() > 0) {
-//                sequences = sequenceInput.get();
-//            } else {
-//                // alignment defined by a map of id -> sequence
-//                List<String> taxa = new ArrayList<>();
-//                taxa.addAll(map.keySet());
-//                sequences.clear();
-//                for (String key : taxa) {
-//                    String sequence = map.get(key);
-//                    sequences.add(new Sequence(key, sequence));
-//                }
-//            }
-//
-//            // initialize the alignment from the given list of sequences
-//            initializeWithSequenceList(sequences, true);
-//
-//            if (taxonSetInput.get() != null && taxonSetInput.get().getTaxonCount() > 0) {
-//                sortByTaxonSet(taxonSetInput.get());
-//            }
-//            Log.info.println(toString(false));
-//        }
+    @Override
+    abstract public void initAndValidate();
+    /**
+     * Initializes the alignment given the provided list of sequences and no other information.
+     * It site weights and/or data type have been previously set up with initAndValidate then they
+     * remain in place. This method is used mainly to re-order the sequences to a new taxon order
+     * when an analysis of multiple alignments on the same taxa are undertaken.
+     *
+     * @param sequences
+     */
+    protected void initializeWithSequenceList(List<Sequence> sequences, boolean log) {
+        this.sequences = sequences;
+        taxaNames.clear();
+        stateCounts.clear();
+        counts.clear();
+        System.out.println("initializeWithSequenceList");
+        try {
+            for (Sequence seq : sequences) {
 
-        /**
-         * Initializes the alignment given the provided list of sequences and no other information.
-         * It site weights and/or data type have been previously set up with initAndValidate then they
-         * remain in place. This method is used mainly to re-order the sequences to a new taxon order
-         * when an analysis of multiple alignments on the same taxa are undertaken.
-         *
-         * @param sequences
-         */
-        private void initializeWithSequenceList(List<Sequence> sequences, boolean log) {
-            this.sequences = sequences;
-            taxaNames.clear();
-            stateCounts.clear();
-            counts.clear();
-            try {
-                for (Sequence seq : sequences) {
-
-                    counts.add(seq.getSequence(m_dataType));
-                    if (taxaNames.contains(seq.getTaxon())) {
-                        throw new RuntimeException("Duplicate taxon found in alignment: " + seq.getTaxon());
-                    }
-                    taxaNames.add(seq.getTaxon());
-                    tipLikelihoods.add(seq.getLikelihoods());
-                    // if seq.isUncertain() == false then the above line adds 'null'
-    	            // to the list, indicating that this particular sequence has no tip likelihood information
-                    usingTipLikelihoods |= (seq.getLikelihoods() != null);	            
-
-                    if (seq.totalCountInput.get() != null) {
-                        stateCounts.add(seq.totalCountInput.get());
-                    } else {
-                        stateCounts.add(m_dataType.getStateCount());
-                    }
+                counts.add(seq.getSequence(m_dataType));
+                if (taxaNames.contains(seq.getTaxon())) {
+                    throw new RuntimeException("Duplicate taxon found in alignment: " + seq.getTaxon());
                 }
-                if (counts.size() == 0) {
-                    // no sequence data
-                    throw new RuntimeException("Sequence data expected, but none found");
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.exit(1);
-            }
-            sanityCheckCalcPatternsSetUpAscertainment(log);
-        }
+                taxaNames.add(seq.getTaxon());
+                tipLikelihoods.add(seq.getLikelihoods());
+                // if seq.isUncertain() == false then the above line adds 'null'
+	            // to the list, indicating that this particular sequence has no tip likelihood information
+                usingTipLikelihoods |= (seq.getLikelihoods() != null);	            
 
-        /**
-         * Checks that sequences are all the same length, calculates patterns and sets up ascertainment.
-         */
-        private void sanityCheckCalcPatternsSetUpAscertainment(boolean log) {
-            // Sanity check: make sure sequences are of same length
-            int length = counts.get(0).size();
-            if (!(m_dataType instanceof StandardData)) {
-                for (List<Integer> seq : counts) {
-                    if (seq.size() != length) {
-                        throw new RuntimeException("Two sequences with different length found: " + length + " != " + seq.size());
-                    }
+                if (seq.totalCountInput.get() != null) {
+                    stateCounts.add(seq.totalCountInput.get());
+                } else {
+                    stateCounts.add(m_dataType.getStateCount());
                 }
             }
-            if (siteWeights != null && siteWeights.length != length) {
-                throw new RuntimeException("Number of weights (" + siteWeights.length + ") does not match sequence length (" + length + ")");
+            if (counts.size() == 0) {
+                // no sequence data
+                throw new RuntimeException("Sequence data expected, but none found");
             }
-
-            calcPatterns(log);
-//            setupAscertainment();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
         }
+        sanityCheckCalcPatternsSetUpAscertainment(log);
+    }
 
-        /**
-         * Sorts an alignment by a provided TaxonSet, so that the sequence/taxon pairs in the alignment match the order
-         * that the taxa appear in the TaxonSet (i.e. not necessarily alphabetically).
-         *
-         * @param toSortBy the taxon set that species the order on the taxa.
-         */
-        public void sortByTaxonSet(TaxonSet toSortBy) {
-
-            List<Sequence> sortedSeqs = new ArrayList<>();
-            sortedSeqs.addAll(sequences);
-            Collections.sort(sortedSeqs, (Sequence o1, Sequence o2) -> {
-                    return Integer.compare(toSortBy.getTaxonIndex(o1.getTaxon()), toSortBy.getTaxonIndex(o2.getTaxon()));
+    /**
+     * Checks that sequences are all the same length, calculates patterns and sets up ascertainment.
+     */
+    private void sanityCheckCalcPatternsSetUpAscertainment(boolean log) {
+        // Sanity check: make sure sequences are of same length
+        int length = counts.get(0).size();
+        if (!(m_dataType instanceof StandardData)) {
+            for (List<Integer> seq : counts) {
+                if (seq.size() != length) {
+                    throw new RuntimeException("Two sequences with different length found: " + length + " != " + seq.size());
                 }
-            );
-            initializeWithSequenceList(sortedSeqs, false);
+            }
+        }
+        if (siteWeights != null && siteWeights.length != length) {
+            throw new RuntimeException("Number of weights (" + siteWeights.length + ") does not match sequence length (" + length + ")");
         }
 
+        calcPatterns(log);
+        setupAscertainment();
+    }
+
+    /**
+     * Sorts an alignment by a provided TaxonSet, so that the sequence/taxon pairs in the alignment match the order
+     * that the taxa appear in the TaxonSet (i.e. not necessarily alphabetically).
+     *
+     * @param toSortBy the taxon set that species the order on the taxa.
+     */
+    public void sortByTaxonSet(TaxonSet toSortBy) {
+
+        List<Sequence> sortedSeqs = new ArrayList<>();
+        sortedSeqs.addAll(sequences);
+        Collections.sort(sortedSeqs, (Sequence o1, Sequence o2) -> {
+                return Integer.compare(toSortBy.getTaxonIndex(o1.getTaxon()), toSortBy.getTaxonIndex(o2.getTaxon()));
+            }
+        );
+        initializeWithSequenceList(sortedSeqs, false);
+    }
+
+    void setupAscertainment() {
+        isAscertained = isAscertainedInput.get();
+
+        if (isAscertained) {
+            //From AscertainedAlignment
+            int from = excludefromInput.get();
+            int to = excludetoInput.get();
+            int every = excludeeveryInput.get();
+            excludedPatterns = new HashSet<>();
+            for (int i = from; i < to; i += every) {
+                int patternIndex_ = patternIndex[i];
+                // reduce weight, so it does not confuse the tree likelihood
+                patternWeight[patternIndex_] = 0;
+                excludedPatterns.add(patternIndex_);
+            }
+        } else {
+        	// sanity check
+            int from = excludefromInput.get();
+            int to = excludetoInput.get();
+            if (from != excludefromInput.defaultValue || to != excludetoInput.defaultValue) {
+            	Log.warning.println("WARNING: excludefrom or excludeto is specified, but 'ascertained' flag is not set to true");
+            	Log.warning.println("WARNING: to suppress this warning, remove the excludefrom or excludeto attributes (if no astertainment correction is required)");
+            	Log.warning.println("WARNING: or set the 'ascertained' flag to true on element with id=" + getID());
+            }
+        }
+
+    } // initAndValidate
 
     static String getSequence(Alignment data, int taxonIndex) {
 
@@ -564,14 +474,14 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         return taxaNames.size();
     }
 
-    /**
-     * @return number of taxa in Alignment.
-     * @deprecated Use getTaxonCount() instead.
-     */
-    @Deprecated
-    public int getNrTaxa() {
-        return getTaxonCount();
-    }
+//    /**
+//     * @return number of taxa in Alignment.
+//     * @deprecated Use getTaxonCount() instead.
+//     */
+//        @Deprecated
+//        public int getNrTaxa() {
+//            return getTaxonCount();
+//        }
 
     public int getTaxonIndex(String id) {
         return taxaNames.indexOf(id);
@@ -599,9 +509,9 @@ public abstract class AbstractHaplotypeModel extends StateNode {
      * @param patternIndex_ Index into pattern array.
      * @return pattern weight
      */
-//    public int getPatternWeight(int patternIndex_) {
-//        return patternWeight[patternIndex_];
-//    }
+    public int getPatternWeight(int patternIndex_) {
+        return patternWeight[patternIndex_];
+    }
 
     public int getMaxStateCount() {
         return maxStateCount;
@@ -654,16 +564,15 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         }
     } // class SiteComparator
 
-    //TODO: Two most important one from Alignment
+
     protected void calcPatterns() {
         calcPatterns(true);
     }
 
-    /**
-     * calculate patterns from sequence data
-     * *
-     */
-    
+        /**
+         * calculate patterns from sequence data
+         * *
+         */
     private void calcPatterns(boolean log) {
         int taxonCount = counts.size();
         int siteCount = counts.get(0).size();
@@ -854,6 +763,16 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         return Math.log(returnProb);
     } // getAscertainmentCorrection
 
+//        /**
+//         * Should not be used. No special order of taxa are assumed. Taxa order should be left to user input.
+//         */
+//        @Deprecated
+//        static public void sortByTaxonName(List<Sequence> seqs) {
+//            Collections.sort(seqs, (Sequence o1, Sequence o2) -> {
+//                    return o1.taxonInput.get().compareTo(o2.taxonInput.get());
+//                }
+//            );
+//        }
 
     /** 
      * Get String representation of a sequence according to the current datatype
@@ -878,5 +797,39 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 		return seq;
 	}
 
+
+// 
 	
+	///**
+	//* directory to pick up data types from *
+	//*/
+	//final static String[] IMPLEMENTATION_DIR = {"beast.evolution.datatype"};
+	
+	/**
+	* list of data type descriptions, obtained from DataType classes *
+	*/
+	//static List<String> types = new ArrayList<>();
+	
+	//static {
+	//  findDataTypes();
+	//}
+	
+	//static public void findDataTypes() {
+	//  // build up list of data types
+	//  List<String> m_sDataTypes = AddOnManager.find(beast.evolution.datatype.DataType.class, IMPLEMENTATION_DIR);
+	//  for (String dataTypeName : m_sDataTypes) {
+	//      try {
+	//          DataType dataType = (DataType) Class.forName(dataTypeName).newInstance();
+	//          if (dataType.isStandard()) {
+	//              String description = dataType.getTypeDescription();
+	//              if (!types.contains(description)) {
+	//                  types.add(description);
+	//              }
+	//          }
+	//      } catch (Exception e) {
+	//          // TODO: handle exception
+	//      }
+	//  }
+	//}
+    
 }

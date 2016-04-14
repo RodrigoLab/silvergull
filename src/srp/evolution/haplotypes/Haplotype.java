@@ -10,6 +10,7 @@ import java.util.List;
 import beast.core.BEASTObject;
 import beast.core.Description;
 import beast.core.Input;
+import beast.evolution.alignment.Alignment;
 import beast.evolution.alignment.Sequence;
 //import beast.evolution.util.Taxon;
 //import beast.math.MathUtils;
@@ -82,6 +83,14 @@ public class Haplotype extends BEASTObject {
 		initAndValidate();
 
 	}
+	
+//	public Haplotype(Alignment alignment) {
+//		
+//		taxonInput.setValue(alignment.getTaxaNames(), this);
+//		dataInput.setValue(alignment.getsInputs(), this);
+//		initAndValidate();
+//
+//	}
 	
 	@Override
 	public void initAndValidate() {
