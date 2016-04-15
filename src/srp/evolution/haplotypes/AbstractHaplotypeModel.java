@@ -184,7 +184,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     // ***************************************************************
     
 
-    static List<String> types = new ArrayList<>();
+//    static List<String> types = new ArrayList<>();
     /**
      * default data type *
      */
@@ -194,23 +194,23 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 //    final public Input<List<Sequence>> sequenceInput =
 //            new Input<>("sequence", "sequence and meta data for particular taxon", new ArrayList<>(), Validate.OPTIONAL);
 
-    final public Input<TaxonSet> taxonSetInput =
-            new Input<>("taxa", "An optional taxon-set used only to sort the sequences into the same order as they appear in the taxon-set.", new TaxonSet(), Validate.OPTIONAL);
+//    final public Input<TaxonSet> taxonSetInput =
+//            new Input<>("taxa", "An optional taxon-set used only to sort the sequences into the same order as they appear in the taxon-set.", new TaxonSet(), Validate.OPTIONAL);
 
-    final public Input<Integer> stateCountInput = new Input<>("statecount", "maximum number of states in all sequences");
-    final public Input<String> dataTypeInput = new Input<>("dataType", "data type, one of " + types, NUCLEOTIDE, types.toArray(new String[0]));
-    final public Input<DataType.Base> userDataTypeInput = new Input<>("userDataType", "non-standard, user specified data type, if specified 'dataType' is ignored");
-    final public Input<Boolean> stripInvariantSitesInput = new Input<>("strip", "sets weight to zero for sites that are invariant (e.g. all 1, all A or all unkown)", false);
-    final public Input<String> siteWeightsInput = new Input<>("weights", "comma separated list of weights, one for each site in the sequences. If not specified, each site has weight 1");
-
-    final public Input<Boolean> isAscertainedInput = new Input<>("ascertained", "is true if the alignment allows ascertainment correction, i.e., conditioning the " +
-            "Felsenstein likelihood on excluding constant sites from the alignment", false);
-    /**
-     * Inputs from AscertainedAlignment
-     */
-    final public Input<Integer> excludefromInput = new Input<>("excludefrom", "first site to condition on, default 0", 0);
-    final public Input<Integer> excludetoInput = new Input<>("excludeto", "last site to condition on (but excluding this site), default 0", 0);
-    final public Input<Integer> excludeeveryInput = new Input<>("excludeevery", "interval between sites to condition on (default 1)", 1);
+//    final public Input<Integer> stateCountInput = new Input<>("statecount", "maximum number of states in all sequences");
+//    final public Input<String> dataTypeInput = new Input<>("dataType", "data type, one of " + types, NUCLEOTIDE, types.toArray(new String[0]));
+//    final public Input<DataType.Base> userDataTypeInput = new Input<>("userDataType", "non-standard, user specified data type, if specified 'dataType' is ignored");
+//    final public Input<Boolean> stripInvariantSitesInput = new Input<>("strip", "sets weight to zero for sites that are invariant (e.g. all 1, all A or all unkown)", false);
+//    final public Input<String> siteWeightsInput = new Input<>("weights", "comma separated list of weights, one for each site in the sequences. If not specified, each site has weight 1");
+//
+//    final public Input<Boolean> isAscertainedInput = new Input<>("ascertained", "is true if the alignment allows ascertainment correction, i.e., conditioning the " +
+//            "Felsenstein likelihood on excluding constant sites from the alignment", false);
+//    /**
+//     * Inputs from AscertainedAlignment
+//     */
+//    final public Input<Integer> excludefromInput = new Input<>("excludefrom", "first site to condition on, default 0", 0);
+//    final public Input<Integer> excludetoInput = new Input<>("excludeto", "last site to condition on (but excluding this site), default 0", 0);
+//    final public Input<Integer> excludeeveryInput = new Input<>("excludeevery", "interval between sites to condition on (default 1)", 1);
 
     /**
      * list of sequences in the alignment *
@@ -231,7 +231,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     /**
      * maximum of m_nStateCounts *
      */
-    protected int maxStateCount;
+    final protected int maxStateCount = 4;//HACK: Fix at 4 for now
 
     /**
      * state codes for the sequences *
@@ -273,12 +273,12 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     /**
      * From AscertainedAlignment
      */
-    Set<Integer> excludedPatterns;
+//    Set<Integer> excludedPatterns;
 
     /**
      * A flag to indicate if the alignment is ascertained
      */
-    public boolean isAscertained;
+//    public boolean isAscertained;
 
 
     /**
@@ -359,7 +359,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         }
 
         calcPatterns(log);
-        setupAscertainment();
+//        setupAscertainment();
     }
 
     /**
@@ -368,47 +368,47 @@ public abstract class AbstractHaplotypeModel extends StateNode {
      *
      * @param toSortBy the taxon set that species the order on the taxa.
      */
-    public void sortByTaxonSet(TaxonSet toSortBy) {
+//    public void sortByTaxonSet(TaxonSet toSortBy) {
+//
+//        List<Sequence> sortedSeqs = new ArrayList<>();
+//        sortedSeqs.addAll(sequences);
+//        Collections.sort(sortedSeqs, (Sequence o1, Sequence o2) -> {
+//                return Integer.compare(toSortBy.getTaxonIndex(o1.getTaxon()), toSortBy.getTaxonIndex(o2.getTaxon()));
+//            }
+//        );
+//        initializeWithSequenceList(sortedSeqs, false);
+//    }
 
-        List<Sequence> sortedSeqs = new ArrayList<>();
-        sortedSeqs.addAll(sequences);
-        Collections.sort(sortedSeqs, (Sequence o1, Sequence o2) -> {
-                return Integer.compare(toSortBy.getTaxonIndex(o1.getTaxon()), toSortBy.getTaxonIndex(o2.getTaxon()));
-            }
-        );
-        initializeWithSequenceList(sortedSeqs, false);
-    }
-
-    void setupAscertainment() {
-        isAscertained = isAscertainedInput.get();
-
-        if (isAscertained) {
-            //From AscertainedAlignment
-        	Log.warning.println("WARNING: ascertainment correction is NOT supported!");
+//    void setupAscertainment() {
+//        isAscertained = isAscertainedInput.get();
+//
+//        if (isAscertained) {
+//            //From AscertainedAlignment
+//        	Log.warning.println("WARNING: ascertainment correction is NOT supported!");
+////            int from = excludefromInput.get();
+////            int to = excludetoInput.get();
+////            int every = excludeeveryInput.get();
+////            excludedPatterns = new HashSet<>();
+////            for (int i = from; i < to; i += every) {
+////                int patternIndex_ = patternIndex[i];
+////                // reduce weight, so it does not confuse the tree likelihood
+////                patternWeight[patternIndex_] = 0;
+////                excludedPatterns.add(patternIndex_);
+////            }           
+//
+//
+//        } else {
+//        	// sanity check
 //            int from = excludefromInput.get();
 //            int to = excludetoInput.get();
-//            int every = excludeeveryInput.get();
-//            excludedPatterns = new HashSet<>();
-//            for (int i = from; i < to; i += every) {
-//                int patternIndex_ = patternIndex[i];
-//                // reduce weight, so it does not confuse the tree likelihood
-//                patternWeight[patternIndex_] = 0;
-//                excludedPatterns.add(patternIndex_);
-//            }           
-
-
-        } else {
-        	// sanity check
-            int from = excludefromInput.get();
-            int to = excludetoInput.get();
-            if (from != excludefromInput.defaultValue || to != excludetoInput.defaultValue) {
-            	Log.warning.println("WARNING: excludefrom or excludeto is specified, but 'ascertained' flag is not set to true");
-            	Log.warning.println("WARNING: to suppress this warning, remove the excludefrom or excludeto attributes (if no astertainment correction is required)");
-            	Log.warning.println("WARNING: or set the 'ascertained' flag to true on element with id=" + getID());
-            }
-        }
-
-    } // initAndValidate
+//            if (from != excludefromInput.defaultValue || to != excludetoInput.defaultValue) {
+//            	Log.warning.println("WARNING: excludefrom or excludeto is specified, but 'ascertained' flag is not set to true");
+//            	Log.warning.println("WARNING: to suppress this warning, remove the excludefrom or excludeto attributes (if no astertainment correction is required)");
+//            	Log.warning.println("WARNING: or set the 'ascertained' flag to true on element with id=" + getID());
+//            }
+//        }
+//
+//    } // initAndValidate
 
     static String getSequence(Alignment data, int taxonIndex) {
 
@@ -585,30 +585,41 @@ public abstract class AbstractHaplotypeModel extends StateNode {
             }
         }
 
-        // sort data
+//        // sort data
+//        for (int i = 0; i < data.length; i++) {
+//        	System.out.println(Arrays.toString(data[i]));
+//		}
+//        
         SiteComparator comparator = new SiteComparator();
-        Arrays.sort(data, comparator);
-
+//        Arrays.sort(data, comparator);
+//System.out.println();
+//        for (int i = 0; i < data.length; i++) {
+//        	System.out.println(Arrays.toString(data[i]));
+//		}
+//        System.exit(2);
+        
         // count patterns in sorted data
         // if (siteWeights != null) the weights are recalculated below
-        int patterns = 1;
-        int[] weights = new int[siteCount];
-        weights[0] = 1;
-        for (int i = 1; i < siteCount; i++) {
-            if (true || usingTipLikelihoods || comparator.compare(data[i - 1], data[i]) != 0) {
-            	// In the case where we're using tip probabilities, we need to treat each 
-            	// site as a unique pattern, because it could have a unique probability vector.
-                patterns++;
-                data[patterns - 1] = data[i];
-            }
-            weights[patterns - 1]++;
-        }
+        int patterns = siteCount;
+//        int[] weights = new int[siteCount];
+//        weights[0] = 1;
+//        for (int i = 1; i < siteCount; i++) {
+//            if (true || usingTipLikelihoods || comparator.compare(data[i - 1], data[i]) != 0) {
+//            	// In the case where we're using tip probabilities, we need to treat each 
+//            	// site as a unique pattern, because it could have a unique probability vector.
+//                patterns++;
+//                data[patterns - 1] = data[i];
+//            }
+////            weights[patterns - 1]++;
+//        }
         
         // reserve memory for patterns
         patternWeight = new int[patterns];
+        Arrays.fill(patternWeight, 1);
+        
         sitePatterns = new int[patterns][taxonCount];
         for (int i = 0; i < patterns; i++) {
-            patternWeight[i] = weights[i];
+//            patternWeight[i] = weights[i];
             sitePatterns[i] = data[i];
         }
 
@@ -632,10 +643,10 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         // determine maximum state count
         // Usually, the state count is equal for all sites,
         // though for SnAP analysis, this is typically not the case.
-        maxStateCount = 0;
-        for (int m_nStateCount1 : stateCounts) {
-            maxStateCount = Math.max(maxStateCount, m_nStateCount1);
-        }
+//        maxStateCount = 4;
+//        for (int m_nStateCount1 : stateCounts) {
+//            maxStateCount = Math.max(maxStateCount, m_nStateCount1);
+//        }
         // report some statistics
         if (log && taxaNames.size() < 30) {
             for (int i = 0; i < taxaNames.size(); i++) {
@@ -643,30 +654,30 @@ public abstract class AbstractHaplotypeModel extends StateNode {
             }
         }
 
-        if (stripInvariantSitesInput.get()) {
-            // don't add patterns that are invariant, e.g. all gaps
-            if (log) Log.info.println("Stripping invariant sites");
-
-            int removedSites = 0;
-            for (int i = 0; i < patterns; i++) {
-                int[] pattern = sitePatterns[i];
-                int value = pattern[0];
-                boolean isInvariant = true;
-                for (int k = 1; k < pattern.length; k++) {
-                    if (pattern[k] != value) {
-                        isInvariant = false;
-                        break;
-                    }
-                }
-                if (isInvariant) {
-                    removedSites += patternWeight[i];
-                    patternWeight[i] = 0;
-
-                    if (log) Log.info.print(" <" + value + "> ");
-                }
-            }
-            if (log) Log.info.println(" removed " + removedSites + " sites ");
-        }
+//        if (stripInvariantSitesInput.get()) {
+//            // don't add patterns that are invariant, e.g. all gaps
+//            if (log) Log.info.println("Stripping invariant sites");
+//
+//            int removedSites = 0;
+//            for (int i = 0; i < patterns; i++) {
+//                int[] pattern = sitePatterns[i];
+//                int value = pattern[0];
+//                boolean isInvariant = true;
+//                for (int k = 1; k < pattern.length; k++) {
+//                    if (pattern[k] != value) {
+//                        isInvariant = false;
+//                        break;
+//                    }
+//                }
+//                if (isInvariant) {
+//                    removedSites += patternWeight[i];
+//                    patternWeight[i] = 0;
+//
+//                    if (log) Log.info.print(" <" + value + "> ");
+//                }
+//            }
+//            if (log) Log.info.println(" removed " + removedSites + " sites ");
+//        }
 
         
     } // calcPatterns
@@ -738,31 +749,31 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         return (state >= 0 && state < maxStateCount);
     }
 
-    //Methods from AscertainedAlignment
-    public Set<Integer> getExcludedPatternIndices() {
-        return excludedPatterns;
-    }
+//    //Methods from AscertainedAlignment
+//    public Set<Integer> getExcludedPatternIndices() {
+//        return excludedPatterns;
+//    }
+//
+//    public int getExcludedPatternCount() {
+//        return excludedPatterns.size();
+//    }
 
-    public int getExcludedPatternCount() {
-        return excludedPatterns.size();
-    }
-
-    public double getAscertainmentCorrection(double[] patternLogProbs) {
-        double excludeProb = 0, includeProb = 0, returnProb = 1.0;
-
-        for (int i : excludedPatterns) {
-            excludeProb += Math.exp(patternLogProbs[i]);
-        }
-
-        if (includeProb == 0.0) {
-            returnProb -= excludeProb;
-        } else if (excludeProb == 0.0) {
-            returnProb = includeProb;
-        } else {
-            returnProb = includeProb - excludeProb;
-        }
-        return Math.log(returnProb);
-    } // getAscertainmentCorrection
+//    public double getAscertainmentCorrection(double[] patternLogProbs) {
+//        double excludeProb = 0, includeProb = 0, returnProb = 1.0;
+//
+//        for (int i : excludedPatterns) {
+//            excludeProb += Math.exp(patternLogProbs[i]);
+//        }
+//
+//        if (includeProb == 0.0) {
+//            returnProb -= excludeProb;
+//        } else if (excludeProb == 0.0) {
+//            returnProb = includeProb;
+//        } else {
+//            returnProb = includeProb - excludeProb;
+//        }
+//        return Math.log(returnProb);
+//    } // getAscertainmentCorrection
 
 //        /**
 //         * Should not be used. No special order of taxa are assumed. Taxa order should be left to user input.

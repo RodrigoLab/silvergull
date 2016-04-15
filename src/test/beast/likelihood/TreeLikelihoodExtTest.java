@@ -156,39 +156,39 @@ public class TreeLikelihoodExtTest extends TestCase {
 //        return logP;
 //    }
 //    
-    @Test
-    public void testAscertainedJC69Likelihood() throws Exception {
-        // as testJC69Likelihood but with ascertained alignment
-
-    	Alignment dataAli = BEASTTestCase.getAscertainedAlignment();
-        HaplotypeModel data = new HaplotypeModel(dataAli);
-        data.dataTypeInput.setValue("nucleotide", data);
-        data.excludefromInput.setValue(0, data);
-        data.excludetoInput.setValue(4, data);
-        data.excludeeveryInput.setValue(1, data);
-        data.isAscertainedInput.setValue(true, data);
-        data.initAndValidate();
-        Tree tree = BEASTTestCase.getTree(dataAli);
-
-
-        Frequencies freqs = new Frequencies();
-        freqs.initByName("data", dataAli,
-                "estimate", false);
-
-        HKY hky = new HKY();
-        hky.initByName("kappa", "1.0", "frequencies", freqs);
-
-        SiteModel siteModel = new SiteModel();
-        siteModel.initByName("mutationRate", "1.0", "gammaCategoryCount", 1, "substModel", hky);
-
-        TreeLikelihoodExt likelihood = new TreeLikelihoodExt();
-        likelihood.initByName("hapModel", data, "tree", tree, "siteModel", siteModel);
-
-        double logP = 0;
-        logP = likelihood.calculateLogP();
-        // the following number comes from Beast 1.6        
-        assertEquals(logP, -737.7140695360017, BEASTTestCase.PRECISION);
-    }
+//    @Test
+//    public void testAscertainedJC69Likelihood() throws Exception {
+//        // as testJC69Likelihood but with ascertained alignment
+//
+//    	Alignment dataAli = BEASTTestCase.getAscertainedAlignment();
+//        HaplotypeModel data = new HaplotypeModel(dataAli);
+//        data.dataTypeInput.setValue("nucleotide", data);
+//        data.excludefromInput.setValue(0, data);
+//        data.excludetoInput.setValue(4, data);
+//        data.excludeeveryInput.setValue(1, data);
+//        data.isAscertainedInput.setValue(true, data);
+//        data.initAndValidate();
+//        Tree tree = BEASTTestCase.getTree(dataAli);
+//
+//
+//        Frequencies freqs = new Frequencies();
+//        freqs.initByName("data", dataAli,
+//                "estimate", false);
+//
+//        HKY hky = new HKY();
+//        hky.initByName("kappa", "1.0", "frequencies", freqs);
+//
+//        SiteModel siteModel = new SiteModel();
+//        siteModel.initByName("mutationRate", "1.0", "gammaCategoryCount", 1, "substModel", hky);
+//
+//        TreeLikelihoodExt likelihood = new TreeLikelihoodExt();
+//        likelihood.initByName("hapModel", data, "tree", tree, "siteModel", siteModel);
+//
+//        double logP = 0;
+//        logP = likelihood.calculateLogP();
+//        // the following number comes from Beast 1.6        
+//        assertEquals(logP, -737.7140695360017, BEASTTestCase.PRECISION);
+//    }
 
     @Test
     public void testK80Likelihood() throws Exception {

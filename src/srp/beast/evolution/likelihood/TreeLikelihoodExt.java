@@ -115,8 +115,8 @@ public class TreeLikelihoodExt extends TreeLikelihood {
         m_branchLengths = new double[nodeCount];
         storedBranchLengths = new double[nodeCount];
 
-        int stateCount = haplotypeInput.get().getMaxStateCount();//TODO: maybe fix at 4?
-        int patterns = haplotypeInput.get().getPatternCount();//TODO: maybe fix at hap length?
+        int stateCount = haplotypeInput.get().getMaxStateCount();
+        int patterns = haplotypeInput.get().getPatternCount();
         if (stateCount == 4) {
             likelihoodCore = new BeerLikelihoodCore4();
         } else {
@@ -145,10 +145,10 @@ public class TreeLikelihoodExt extends TreeLikelihood {
         probabilities = new double[(stateCount + 1) * (stateCount + 1)];
         Arrays.fill(probabilities, 1.0);
 
-		if (haplotypeInput.get().isAscertained) {
-			Log.warning.println("WARNING: ascertainment correction is NOT supported!");
-//			useAscertainedSitePatterns = true;
-		}
+//		if (haplotypeInput.get().isAscertained) {
+//			Log.warning.println("WARNING: ascertainment correction is NOT supported!");
+////			useAscertainedSitePatterns = true;
+//		}
 		
 		//////////// new method
 		int patternCount = patterns;
@@ -178,8 +178,8 @@ public class TreeLikelihoodExt extends TreeLikelihood {
             }
 
     	}
-    	System.out.println();
-    	System.out.println(Arrays.toString(treeTaxonIndex));
+//    	System.out.println();
+//    	System.out.println(Arrays.toString(treeTaxonIndex));
     	
 		
     	
@@ -188,8 +188,8 @@ public class TreeLikelihoodExt extends TreeLikelihood {
 			int updateExternalNodeIndex = treeTaxonIndex[i];//treeModel.getTaxonIndex(taxonId);
 //	        int updateExternalNodeIndex2 = treeTaxonIndex[i];
 //			treeTaxonIndex
-			System.out.println(i +"\t"+ updateExternalNodeIndex +"\t"+
-					states.length +"\t"+ states[updateExternalNodeIndex].length);
+//			System.out.println(i +"\t"+ updateExternalNodeIndex +"\t"+
+//					states.length +"\t"+ states[updateExternalNodeIndex].length);
 //    		likelihoodCore.getNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
 //    		likelihoodCore.setNodeStates(updateExternalNodeIndex, states[i]);
     		
@@ -394,17 +394,17 @@ public class TreeLikelihoodExt extends TreeLikelihood {
     
 	protected void calcLogP() {
         logP = 0.0;
-        if (useAscertainedSitePatterns) {
-        	Log.warning.println("WARNING: ascertainment correction is NOT supported!");
-            final double ascertainmentCorrection = haplotypeInput.get().getAscertainmentCorrection(patternLogLikelihoods);
-            for (int i = 0; i < haplotypeInput.get().getPatternCount(); i++) {
-                logP += (patternLogLikelihoods[i] - ascertainmentCorrection) * haplotypeInput.get().getPatternWeight(i);
-            }
-        } else {
+//        if (useAscertainedSitePatterns) {
+//        	Log.warning.println("WARNING: ascertainment correction is NOT supported!");
+//            final double ascertainmentCorrection = haplotypeInput.get().getAscertainmentCorrection(patternLogLikelihoods);
+//            for (int i = 0; i < haplotypeInput.get().getPatternCount(); i++) {
+//                logP += (patternLogLikelihoods[i] - ascertainmentCorrection) * haplotypeInput.get().getPatternWeight(i);
+//            }
+//        } else {
             for (int i = 0; i < haplotypeInput.get().getPatternCount(); i++) {
                 logP += patternLogLikelihoods[i] * haplotypeInput.get().getPatternWeight(i);
             }
-        }
+//        }
     }
     
 

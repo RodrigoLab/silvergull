@@ -99,38 +99,38 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		}
 //
 
-        if (siteWeightsInput.get() != null) {
-            String str = siteWeightsInput.get().trim();
-            String[] strs = str.split(",");
-            siteWeights = new int[strs.length];
-            for (int i = 0; i < strs.length; i++) {
-                siteWeights[i] = Integer.parseInt(strs[i].trim());
-            }
-        }
+//        if (siteWeightsInput.get() != null) {
+//            String str = siteWeightsInput.get().trim();
+//            String[] strs = str.split(",");
+//            siteWeights = new int[strs.length];
+//            for (int i = 0; i < strs.length; i++) {
+//                siteWeights[i] = Integer.parseInt(strs[i].trim());
+//            }
+//        }
 
         // determine data type, either user defined or one of the standard ones
-        if (userDataTypeInput.get() != null) {
-            m_dataType = userDataTypeInput.get();
-        } else {
-            if (types.indexOf(dataTypeInput.get()) < 0) {
-//                throw new IllegalArgumentException("data type + '" + dataTypeInput.get() + "' cannot be found. " +
-//                        "Choose one of " + Arrays.toString(types.toArray(new String[0])));
-            }
-            // seems to spend forever in there??
-//            List<String> dataTypes = AddOnManager.find(beast.evolution.datatype.DataType.class, IMPLEMENTATION_DIR);
-//            for (String dataTypeName : dataTypes) {
-//                DataType dataType;
-//				try {
-//					dataType = (DataType) Class.forName(dataTypeName).newInstance();
-//	                if (dataTypeInput.get().equals(dataType.getTypeDescription())) {
-//	                    m_dataType = dataType;
-//	                    break;
-//	                }
-//				} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-//					throw new IllegalArgumentException(e.getMessage());
-//				}
+//        if (userDataTypeInput.get() != null) {
+//            m_dataType = userDataTypeInput.get();
+//        } else {
+//            if (types.indexOf(dataTypeInput.get()) < 0) {
+////                throw new IllegalArgumentException("data type + '" + dataTypeInput.get() + "' cannot be found. " +
+////                        "Choose one of " + Arrays.toString(types.toArray(new String[0])));
 //            }
-        }
+//            // seems to spend forever in there??
+////            List<String> dataTypes = AddOnManager.find(beast.evolution.datatype.DataType.class, IMPLEMENTATION_DIR);
+////            for (String dataTypeName : dataTypes) {
+////                DataType dataType;
+////				try {
+////					dataType = (DataType) Class.forName(dataTypeName).newInstance();
+////	                if (dataTypeInput.get().equals(dataType.getTypeDescription())) {
+////	                    m_dataType = dataType;
+////	                    break;
+////	                }
+////				} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+////					throw new IllegalArgumentException(e.getMessage());
+////				}
+////            }
+//        }
         m_dataType = DATA_TYPE;
         // initialize the sequence list
         if (sequenceInput.get().size() > 0) {
@@ -149,9 +149,9 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 
         // initialize the alignment from the given list of sequences
         initializeWithSequenceList(sequences, true);
-        if (taxonSetInput.get() != null && taxonSetInput.get().getTaxonCount() > 0) {
-            sortByTaxonSet(taxonSetInput.get());
-        }
+//        if (taxonSetInput.get() != null && taxonSetInput.get().getTaxonCount() > 0) {
+//            sortByTaxonSet(taxonSetInput.get());
+//        }
         Log.info.println(toString(false));
     
 		
@@ -644,7 +644,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		
 	}
 	
-//	
+////////////////////////////////////////////////////////////////////////////////////////////
 ////XXX not used after this
 //	public double getLogqFrequency(int oldChar, int newChar){
 //		return storedLogqMatrix[NUCLEOTIDE_STATES[oldChar]][NUCLEOTIDE_STATES[newChar]];
