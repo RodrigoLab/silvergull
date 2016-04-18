@@ -264,7 +264,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
      * pattern state encodings *
      */
     protected int [][] sitePatterns; // #patterns x #taxa
-
+    protected int[][] storedSitePatterns;
     /**
      * maps site nr to pattern nr *
      */
@@ -627,6 +627,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         Arrays.fill(patternWeight, 1);
         
         sitePatterns = new int[patterns][taxonCount];
+        storedSitePatterns = new int [patterns][taxonCount];
         for (int i = 0; i < patterns; i++) {
 //            patternWeight[i] = weights[i];
             sitePatterns[i] = data[i];

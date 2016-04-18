@@ -133,8 +133,11 @@ public class TreeLikelihoodWithHaplotypeTest extends TestCase {
             System.out.println(stateNode +"\t"+ stateNode.getID());
         }	
 		logP = likelihood.calculateLogP();
+		System.out.println("LogP: "+ logP);
 		for (int i = 0; i < 5; i++) {
 			System.out.println("\n\n_Start "+i);
+//			logP = likelihood.calculateLogP();
+			System.out.println("LogP: "+ logP);
 			op.proposal();
 			state.storeCalculationNodes();
 			state.checkCalculationNodesDirtiness();
@@ -144,6 +147,7 @@ public class TreeLikelihoodWithHaplotypeTest extends TestCase {
 //		state.storeCalculationNodes();
 //		state.checkCalculationNodesDirtiness();
 		logP = likelihood.calculateLogP();
+		System.out.println("LogP: "+ logP);
 		//TODO: FIXME: store/restore haplotypeModel. Previously, it deal with haploytpe.
 		//But we calculate everything with sitePatterns now. Either store/restore in Haplotype,
 		//Or create and use. storeSitePattern
@@ -167,6 +171,8 @@ public class TreeLikelihoodWithHaplotypeTest extends TestCase {
               //System.err.print(" reject");
           }
           state.setEverythingDirty(false);
+//          logP = likelihood.calculateLogP();
+//  		System.out.println("LogP: -1992.205  "+ logP);
           
 		}
 		for (int i = 0; i < data.getHaplotypeCount(); i++) {
@@ -174,7 +180,7 @@ public class TreeLikelihoodWithHaplotypeTest extends TestCase {
 			
 		}
 //		likelihood.initAndValidate();
-//		logP = likelihood.calculateLogP();
+		logP = likelihood.calculateLogP();
 		System.out.println("LogP: "+ logP);
         assertEquals(logP, -1992.2056440317247, BEASTTestCase.PRECISION);
 

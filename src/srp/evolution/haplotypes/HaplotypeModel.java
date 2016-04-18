@@ -324,7 +324,12 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		for (int i = 0; i < getHaplotypeCount(); i++) {
 			Haplotype haplotype = getHaplotype(i);
 			haplotype.storeState();
+			
 		}
+		for (int i = 0; i < haplotypeLength; i++) {
+			System.arraycopy(sitePatterns[i], 0, storedSitePatterns[i], 0, haplotypeCount);
+		}
+		
 		
 	}
 	
@@ -351,6 +356,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 			siteIndex = operationRecord.getSingleIndex();
 			haplotype = getHaplotype(haplotypeIndex);
 			haplotype.storeState(siteIndex);
+			storedSitePatterns[siteIndex][haplotypeIndex] = sitePatterns[siteIndex][haplotypeIndex];
 
 			break;
 
@@ -409,14 +415,21 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 				haplotype = getHaplotype(i);
 				haplotype.restoreState();
 			}
+			for (int i = 0; i < haplotypeLength; i++) {
+				int[] tmp1 = sitePatterns[i];
+				sitePatterns[i] = storedSitePatterns[i];
+				storedSitePatterns[i] = tmp1;
+
+			}
 			break;
 
 		case SINGLE:
-			hapIndex = operationRecord.getSpectrumIndex();
+			int haplotypeIndex = operationRecord.getSpectrumIndex();
 			siteIndex = operationRecord.getSingleIndex();
 //			System.out.println(hapIndex +"\t"+ siteIndex);
-			haplotype = getHaplotype(hapIndex);
+			haplotype = getHaplotype(haplotypeIndex);
 			haplotype.restoreState(siteIndex);
+			sitePatterns[siteIndex][haplotypeIndex] = storedSitePatterns[siteIndex][haplotypeIndex];
 			break;
 		
 		case MULTI:
