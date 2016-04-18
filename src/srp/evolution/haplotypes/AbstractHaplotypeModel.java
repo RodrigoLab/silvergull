@@ -23,7 +23,7 @@ import beast.evolution.datatype.StandardData;
 
 
 public abstract class AbstractHaplotypeModel extends StateNode {
-	
+	//Store Haplotype[] and reimplement alignment class 
 
 	public static final DataType DATA_TYPE = new Nucleotide(); 
 	
@@ -226,13 +226,13 @@ public abstract class AbstractHaplotypeModel extends StateNode {
      * list of state counts for each of the sequences, typically these are
      * constant throughout the whole alignment.
      */
-    protected List<Integer> stateCounts = new ArrayList<>();
+//    protected List<Integer> stateCounts = new ArrayList<>();
 
     /**
      * maximum of m_nStateCounts *
      */
-    final protected int maxStateCount = 4;//HACK: Fix at 4 for now
-
+    final protected int maxStateCount = DATA_TYPE.getStateCount();;
+    
     /**
      * state codes for the sequences *
      */
@@ -241,7 +241,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     /**
      * data type, useful for converting String sequence to Code sequence, and back *
      */
-    protected DataType m_dataType;
+    final protected DataType m_dataType = DATA_TYPE;
 
     /**
      * weight over the columns of a matrix *
@@ -251,7 +251,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     /**
      * weights of sites -- assumed 1 for each site if not specified
      */
-    protected int[] siteWeights = null;
+//    protected int[] siteWeights = null;
 
     /**
      * Probabilities associated with each tip of the tree, for use when the
@@ -268,6 +268,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     /**
      * maps site nr to pattern nr *
      */
+    @Deprecated
     protected int[] patternIndex;
 
     /**
@@ -308,7 +309,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     protected void initializeWithSequenceList(List<Sequence> sequences, boolean log) {
         this.sequences = sequences;
         taxaNames.clear();
-        stateCounts.clear();
+//        stateCounts.clear();
         counts.clear();
         System.out.println("initializeWithSequenceList");
         try {
@@ -324,11 +325,11 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 	            // to the list, indicating that this particular sequence has no tip likelihood information
                 usingTipLikelihoods |= (seq.getLikelihoods() != null);	            
 
-                if (seq.totalCountInput.get() != null) {
-                    stateCounts.add(seq.totalCountInput.get());
-                } else {
-                    stateCounts.add(m_dataType.getStateCount());
-                }
+//                if (seq.totalCountInput.get() != null) {
+//                    stateCounts.add(seq.totalCountInput.get());
+//                } else {
+//                    stateCounts.add(m_dataType.getStateCount());
+//                }
             }
             if (counts.size() == 0) {
                 // no sequence data
@@ -347,16 +348,23 @@ public abstract class AbstractHaplotypeModel extends StateNode {
     private void sanityCheckCalcPatternsSetUpAscertainment(boolean log) {
         // Sanity check: make sure sequences are of same length
         int length = counts.get(0).size();
+        
         if (!(m_dataType instanceof StandardData)) {
             for (List<Integer> seq : counts) {
                 if (seq.size() != length) {
                     throw new RuntimeException("Two sequences with different length found: " + length + " != " + seq.size());
                 }
+                if (seq.size() != haplotypeLength) {
+                    throw new RuntimeException("Two haplotypes with different length found: " + haplotypeLength + " != " + seq.size());
+                }
             }
         }
-        if (siteWeights != null && siteWeights.length != length) {
-            throw new RuntimeException("Number of weights (" + siteWeights.length + ") does not match sequence length (" + length + ")");
+        if( counts.size() != haplotypeCount ){
+            throw new RuntimeException("Different number of hapoltype count: " + haplotypeCount + " != " + counts.size());
         }
+//        if (siteWeights != null && siteWeights.length != length) {
+//            throw new RuntimeException("Number of weights (" + siteWeights.length + ") does not match sequence length (" + length + ")");
+//        }
 
         calcPatterns(log);
 //        setupAscertainment();
@@ -442,9 +450,9 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         return taxaNames;
     }
 
-    public List<Integer> getStateCounts() {
-        return stateCounts;
-    }
+//    public List<Integer> getStateCounts() {
+//        return stateCounts;
+//    }
 
     /**
      * Returns a List of Integer Lists where each Integer List represents
@@ -522,6 +530,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
      * @param site Index of site.
      * @return Index of pattern.
      */
+    @Deprecated
     public int getPatternIndex(int site) {
         return patternIndex[site];
     }
@@ -530,7 +539,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
      * @return Total number of sites in alignment.
      */
     public int getSiteCount() {
-        return patternIndex.length;
+        return haplotypeLength;
     }
 
     /**
@@ -590,7 +599,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 //        	System.out.println(Arrays.toString(data[i]));
 //		}
 //        
-        SiteComparator comparator = new SiteComparator();
+        
 //        Arrays.sort(data, comparator);
 //System.out.println();
 //        for (int i = 0; i < data.length; i++) {
@@ -624,6 +633,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         }
 
         // find patterns for the sites
+        SiteComparator comparator = new SiteComparator();
         patternIndex = new int[siteCount];
         for (int i = 0; i < siteCount; i++) {
             int[] sites = new int[taxonCount];
@@ -631,14 +641,16 @@ public abstract class AbstractHaplotypeModel extends StateNode {
                 sites[j] = counts.get(j).get(i);
             }
             patternIndex[i] = Arrays.binarySearch(sitePatterns, sites, comparator);
+            
         }
-
-        if (siteWeights != null) {
-            Arrays.fill(patternWeight, 0);
-            for (int i = 0; i < siteCount; i++) {
-                patternWeight[patternIndex[i]] += siteWeights[i];
-            }
-        }
+//System.out.println(Arrays.toString(patternIndex));
+        
+//        if (siteWeights != null) {
+//            Arrays.fill(patternWeight, 0);
+//            for (int i = 0; i < siteCount; i++) {
+//                patternWeight[patternIndex[i]] += siteWeights[i];
+//            }
+//        }
         
         // determine maximum state count
         // Usually, the state count is equal for all sites,
@@ -650,7 +662,7 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         // report some statistics
         if (log && taxaNames.size() < 30) {
             for (int i = 0; i < taxaNames.size(); i++) {
-                Log.info.println(taxaNames.get(i) + ": " + counts.get(i).size() + " " + stateCounts.get(i));
+                Log.info.println(taxaNames.get(i) + ": " + counts.get(i).size() + " " );
             }
         }
 
@@ -797,7 +809,8 @@ public abstract class AbstractHaplotypeModel extends StateNode {
 		// build up string from underlying data using the current datatype
 		int [] states = new int[getSiteCount()];
 		for (int k = 0; k < getSiteCount(); k++) {
-			int d = sitePatterns[patternIndex[k]][i];
+//			int d = sitePatterns[patternIndex[k]][i];
+			int d = sitePatterns[k][i];
 			states[k] = d;
 		}
 		String seq = null;

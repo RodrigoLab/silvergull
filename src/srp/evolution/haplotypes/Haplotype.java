@@ -2,10 +2,16 @@ package srp.evolution.haplotypes;
 
 import beast.evolution.datatype.DataType;
 import beast.evolution.datatype.Nucleotide;
+import beast.util.CollectionUtils;
 import beast.util.Randomizer;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+
+import com.google.common.collect.Collections2;
+import com.google.common.primitives.Ints;
 
 import beast.core.BEASTObject;
 import beast.core.Description;
@@ -27,34 +33,45 @@ public class Haplotype extends BEASTObject {
 	final public Input<Boolean> uncertainInput = new Input<>("uncertain",
 			"if true, sequence is provided as comma separated probabilities for each character, with sites separated by a semi-colons. In this formulation, gaps are coded as 1/K,...,1/K, where K is the number of states in the model.");
 
-	
-	
+//	
+	@Deprecated
 	char[] haplotype;
+	@Deprecated
 	char[] storedHaplotype;
-	int haplotypeLength;
+	
+	int[] haplotypeState;
+	int[] storedHaplotypeState;
+	
+	
 //	private String sequenceString;
+	
 
 	public static final DataType DATA_TYPE = new Nucleotide();
 	public static final int STATE_COUNT = DATA_TYPE.getStateCount();
+	
+	
 	
 	//WORK with state in BEAST 2
 	
 	public Haplotype(int haplotypeLength) {
 
-		this.haplotypeLength = haplotypeLength;
-		haplotype = new char[this.haplotypeLength];
-		storedHaplotype = new char[this.haplotypeLength];
+		haplotype = new char[haplotypeLength];
+		storedHaplotype = new char[haplotypeLength];
+		
+		haplotypeState = new int[haplotypeLength];
+		storedHaplotypeState = new int[haplotypeLength];
 		
 		initHaplotype();
 	}
 
 	private void initHaplotype() {
 
-		for (int i = 0; i < haplotypeLength; i++) {
+		for (int i = 0; i < haplotype.length; i++) {
 //			int state = MathUtils.nextInt(STATE_COUNT);
 			int state = Randomizer.nextInt(STATE_COUNT);
 //			char newChar = DATA_TYPE.getChar(state);
 			haplotype[i] = (char) state;
+			haplotypeState[i] = state;
 		}
 		storeState();
 		
@@ -94,13 +111,18 @@ public class Haplotype extends BEASTObject {
 	
 	@Override
 	public void initAndValidate() {
-		Sequence x;
+		
 
 		String data = dataInput.get();
         // remove spaces
         data = data.replaceAll("\\s", "");
+        
         List<Integer> sequence = DATA_TYPE.string2state(data);
-		
+        
+		haplotype = data.toCharArray();
+		haplotypeState = Ints.toArray(sequence);
+ 
+        
 	}
 	
 	/**
@@ -157,7 +179,7 @@ public class Haplotype extends BEASTObject {
      */
     
 	public int getLength() {
-        return haplotypeLength;
+        return haplotypeState.length;
     }
 
     /**
@@ -181,9 +203,9 @@ public class Haplotype extends BEASTObject {
      * @return the state at site index.
      */
 //    @Override
-//	public int getState(int index) {
-//        return DATA_TYPE.getState(haplotype[index]);
-//    }
+	public int getState(int index) {
+        return haplotypeState[index];
+    }
 
     /**
      */
@@ -220,23 +242,24 @@ public class Haplotype extends BEASTObject {
      */
     
 	public void setSequenceString(String data) {
-		List<Integer> sequence;
-    	
-	    	
-	        // remove spaces
+		    // remove spaces
         data = data.replaceAll("\\s", "");
-        sequence = DATA_TYPE.string2state(data);
-		//setSequenceString(sequence.toCharArray());
+
+        List<Integer> sequence = DATA_TYPE.string2state(data);
+		haplotypeState = Ints.toArray(sequence);
+
+//		haplotype = data.toCharArray();
+		setSequenceString(data.toCharArray());
     }
     
     public void setSequenceString(char[] sequenceArray) {
-    	if(sequenceArray.length != haplotypeLength){
+    	if(sequenceArray.length != haplotypeState.length){
 			throw new IllegalArgumentException("Invalid sequence length: "
 					+ sequenceArray.length
-					+ ". Haplotype length must be equal to " + haplotypeLength);
+					+ ". Haplotype length must be equal to " + haplotypeState.length);
 		}
     	else{
-			System.arraycopy(sequenceArray, 0, haplotype, 0, haplotypeLength);
+			System.arraycopy(sequenceArray, 0, haplotype, 0, haplotypeState.length);
     	}
     	
     }
@@ -244,15 +267,17 @@ public class Haplotype extends BEASTObject {
 
 	public void storeState(int index) {
 		storedHaplotype[index] = haplotype[index];
+		storedHaplotypeState[index] = haplotypeState[index];
 //		storeState();
 	}
 	public void restoreState(int index) {
 		haplotype[index] = storedHaplotype[index];
+		haplotypeState[index] = storedHaplotypeState[index];
 //		restoreState();
 	}
 	
 	public void storeState() {
-		System.arraycopy(haplotype, 0, storedHaplotype, 0, haplotypeLength);
+		System.arraycopy(haplotype, 0, storedHaplotype, 0, haplotypeState.length);
 	}
 
 	public void restoreState() {
@@ -277,6 +302,13 @@ public class Haplotype extends BEASTObject {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
+	public void setStateAt(int siteIndex, int newState) {
+		haplotypeState[siteIndex] = newState;
+		
+	}
+
+
 
 	
 

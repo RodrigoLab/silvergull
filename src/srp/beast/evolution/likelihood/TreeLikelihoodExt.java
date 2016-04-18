@@ -2,6 +2,7 @@ package srp.beast.evolution.likelihood;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.tree.TreeModel;
@@ -16,7 +17,10 @@ import beast.evolution.branchratemodel.StrictClockModel;
 import beast.evolution.likelihood.BeagleTreeLikelihood;
 import beast.evolution.likelihood.BeerLikelihoodCore;
 import beast.evolution.likelihood.BeerLikelihoodCore4;
+import beast.evolution.likelihood.GenericTreeLikelihood;
+import beast.evolution.likelihood.LikelihoodCore;
 import beast.evolution.likelihood.TreeLikelihood;
+import beast.evolution.likelihood.TreeLikelihood.Scaling;
 import beast.evolution.sitemodel.SiteModel;
 import beast.evolution.substitutionmodel.SubstitutionModel;
 import beast.evolution.tree.Node;
@@ -29,10 +33,23 @@ import srp.evolution.haplotypes.HaplotypeModel;
 
 
 @Description("Extension of beast2 TreeLikelihood class")
-public class TreeLikelihoodExt extends TreeLikelihood {
+public class TreeLikelihoodExt extends GenericTreeLikelihood {
 	
     final public Input<HaplotypeModel> haplotypeInput = new Input<>("hapModel", "sequence data for the beast.tree", Validate.REQUIRED);
+
+    final public Input<Boolean> m_useAmbiguities = new Input<>("useAmbiguities", "flag to indicate that sites containing ambiguous states should be handled instead of ignored (the default)", false);
+    final public Input<Boolean> m_useTipLikelihoods = new Input<>("useTipLikelihoods", "flag to indicate that partial likelihoods are provided at the tips", false);
     
+    
+    public static enum Scaling {none, always, _default};
+    final public Input<Scaling> scaling = new Input<>("scaling", "type of scaling to use, one of " + Arrays.toString(Scaling.values()) + ". If not specified, the -beagle_scaling flag is used.", Scaling._default, Scaling.values());
+    
+
+
+    /**
+     * calculation engine *
+     */
+    protected LikelihoodCore likelihoodCore;
     BeagleTreeLikelihood beagle;
 
     /**
@@ -40,8 +57,37 @@ public class TreeLikelihoodExt extends TreeLikelihood {
      * is safe to link to them only once, during initAndValidate.
      */
     SubstitutionModel substitutionModel;
+    protected SiteModel.Base m_siteModel;
+    protected BranchRateModel.Base branchRateModel;
 
-    
+    /**
+     * flag to indicate the
+     * // when CLEAN=0, nothing needs to be recalculated for the node
+     * // when DIRTY=1 indicates a node partial needs to be recalculated
+     * // when FILTHY=2 indicates the indices for the node need to be recalculated
+     * // (often not necessary while node partial recalculation is required)
+     */
+    protected int hasDirt;
+
+    /**
+     * Lengths of the branches in the tree associated with each of the nodes
+     * in the tree through their node  numbers. By comparing whether the
+     * current branch length differs from stored branch lengths, it is tested
+     * whether a node is dirty and needs to be recomputed (there may be other
+     * reasons as well...).
+     * These lengths take branch rate models in account.
+     */
+    protected double[] m_branchLengths;
+    protected double[] storedBranchLengths;
+
+    /**
+     * memory allocation for likelihoods for each of the patterns *
+     */
+    protected double[] patternLogLikelihoods;
+    /**
+     * memory allocation for the root partials *
+     */
+    protected double[] m_fRootPartials;
     /**
      * memory allocation for probability tables obtained from the SiteModel *
      */
@@ -52,21 +98,18 @@ public class TreeLikelihoodExt extends TreeLikelihood {
     /**
      * flag to indicate ascertainment correction should be applied *
      */
-    boolean useAscertainedSitePatterns = false;
+//    boolean useAscertainedSitePatterns = false;
 
     /**
      * dealing with proportion of site being invariant *
      */
     double proportionInvariant = 0;
     List<Integer> constantPattern = null;
-
-    ///////////////////////////
+    protected HaplotypeModel haplotypeModel;
+    
     
     final private static boolean DEBUG = false;
-    private HaplotypeModel haplotypeModel;
     
-    
-//    final public Input<Alignment> dataInput = nulnew Input<>("data", "sequence data for the beast.tree", Validate.REQUIRED);
     
     @Override
     public void initAndValidate() {
@@ -79,8 +122,6 @@ public class TreeLikelihoodExt extends TreeLikelihood {
             throw new IllegalArgumentException("The number of nodes in the tree does not match the number of sequences");
         }
         beagle = null;
-        
-        
 //        beagle = new BeagleTreeLikelihood();
         System.out.println("Only java core now, NO beagle yet");
 //        try {
@@ -97,7 +138,7 @@ public class TreeLikelihoodExt extends TreeLikelihood {
 //			// ignore
 //		}
         // No Beagle instance was found, so we use the good old java likelihood core
-        beagle = null;
+//        beagle = null;
 
         int nodeCount = treeInput.get().getNodeCount();
         if (!(siteModelInput.get() instanceof SiteModel.Base)) {
@@ -120,6 +161,7 @@ public class TreeLikelihoodExt extends TreeLikelihood {
         if (stateCount == 4) {
             likelihoodCore = new BeerLikelihoodCore4();
         } else {
+        	Log.err.println("StateCount!=4 "+ stateCount + ". This should not happen in HaplotypeModel!");
             likelihoodCore = new BeerLikelihoodCore(stateCount);
         }
 
@@ -178,6 +220,15 @@ public class TreeLikelihoodExt extends TreeLikelihood {
             }
 
     	}
+    	for (int j = 0; j < nodesAsArray.length; j++) {
+    		Node node = nodesAsArray[j];
+	    	if (node.isLeaf()) {
+	            HaplotypeModel data = haplotypeInput.get();
+	            int taxonIndex = getTaxonIndex(node.getID(), data);
+//	            System.out.println(taxonIndex);
+	    	}
+    	}
+    	
 //    	System.out.println();
 //    	System.out.println(Arrays.toString(treeTaxonIndex));
     	
@@ -233,7 +284,7 @@ public class TreeLikelihoodExt extends TreeLikelihood {
             }
         }
     }
-    @Override
+    
     protected void initCore() {
         final int nodeCount = treeInput.get().getNodeCount();
         likelihoodCore.initialize(
@@ -247,6 +298,7 @@ public class TreeLikelihoodExt extends TreeLikelihood {
         final int intNodeCount = nodeCount / 2;
 
         if (m_useAmbiguities.get() || m_useTipLikelihoods.get()) {
+        	Log.warning.println("m_useAmbiguities.get() || m_useTipLikelihoods.get()) are not tested/implemented for haplotype model.");
             setPartials(treeInput.get().getRoot(), haplotypeInput.get().getPatternCount());
         } else {
             setStates(treeInput.get().getRoot(), haplotypeInput.get().getPatternCount());
@@ -261,7 +313,7 @@ public class TreeLikelihoodExt extends TreeLikelihood {
     /**
      * set leaf states in likelihood core *
      */
-    @Override
+    
     protected void setStates(Node node, int patternCount) {
         if (node.isLeaf()) {
             HaplotypeModel data = haplotypeInput.get();
@@ -310,8 +362,9 @@ public class TreeLikelihoodExt extends TreeLikelihood {
 	/**
      * set leaf partials in likelihood core *
      */
-    @Override
+    
     protected void setPartials(Node node, int patternCount) {
+    	Log.warning.println("setPartials are NOT tested");
         if (node.isLeaf()) {
         	HaplotypeModel data = haplotypeInput.get();
             int states = data.getDataType().getStateCount();
@@ -361,8 +414,17 @@ public class TreeLikelihoodExt extends TreeLikelihood {
         final TreeInterface tree = treeInput.get();
 
         try {
-        	if (traverse(tree.getRoot()) != Tree.IS_CLEAN)
+        	if (traverse(tree.getRoot()) != Tree.IS_CLEAN){
+//        		traverse(tree.getRoot());
+        		//new
+        		
+//        		hasDirt = Tree.IS_FILTHY;
+//                traverse(tree.getRoot());
+        		// end new
+        		
+        		
         		calcLogP();
+        	}
         }
         catch (ArithmeticException e) {
         	return Double.NEGATIVE_INFINITY;
@@ -403,7 +465,14 @@ public class TreeLikelihoodExt extends TreeLikelihood {
 //        } else {
             for (int i = 0; i < haplotypeInput.get().getPatternCount(); i++) {
                 logP += patternLogLikelihoods[i] * haplotypeInput.get().getPatternWeight(i);
+                
             }
+//            for (int i = 0; i < haplotypeModel.getHaplotypeCount(); i++) {
+//                likelihoodCore.getNodeStates(i, states[i]);
+//                System.out.println(Arrays.toString(states[i]));
+//			}
+//            System.out.println(Arrays.toString(patternLogLikelihoods));
+            
 //        }
     }
     
@@ -487,6 +556,92 @@ public class TreeLikelihoodExt extends TreeLikelihood {
         }
         return update;
     } // traverseWithBRM
+
+	
+	
+
+    /** CalculationNode methods **/
+
+    /**
+     * check state for changed variables and update temp results if necessary *
+     */
+    @Override
+    protected boolean requiresRecalculation() {
+    	System.out.println("TreeLikeliExt.java requiresRecalculation()");
+        if (beagle != null) {
+        	Log.err.println("Beagle calculation is NOT implemented!!");
+//            return beagle.requiresRecalculation();
+        }
+        hasDirt = Tree.IS_CLEAN;
+        
+//        System.out.println(haplotypeInput.get().somethingIsDirty());
+//        System.out.println(haplotypeModel.somethingIsDirty());
+//        System.out.println("M:"+m_siteModel.isDirtyCalculation());
+        if (haplotypeInput.get().somethingIsDirty()) {
+        	updatePatternLis();
+            hasDirt = Tree.IS_FILTHY;
+            return true;
+        }
+        
+        if (m_siteModel.isDirtyCalculation()) {
+            hasDirt = Tree.IS_DIRTY;
+            return true;
+        }
+        if (branchRateModel != null && branchRateModel.isDirtyCalculation()) {
+            //m_nHasDirt = Tree.IS_DIRTY;
+            return true;
+        }
+        return treeInput.get().somethingIsDirty();
+    }
+
+    @Override
+    public void store() {
+        if (beagle != null) {
+            beagle.store();
+            super.store();
+            return;
+        }
+        if (likelihoodCore != null) {
+            likelihoodCore.store();
+        }
+        System.out.println("store() "+this.getClass().getName());
+        super.store();
+        System.arraycopy(m_branchLengths, 0, storedBranchLengths, 0, m_branchLengths.length);
+    }
+
+    @Override
+    public void restore() {
+        if (beagle != null) {
+            beagle.restore();
+            super.restore();
+            return;
+        }
+        if (likelihoodCore != null) {
+            likelihoodCore.restore();
+        }
+        System.out.println("restore() "+this.getClass().getName());
+        
+        super.restore();
+        double[] tmp = m_branchLengths;
+        m_branchLengths = storedBranchLengths;
+        storedBranchLengths = tmp;
+    }
+
+    /**
+     * @return a list of unique ids for the state nodes that form the argument
+     */
+    @Override
+	public List<String> getArguments() {
+        return Collections.singletonList(dataInput.get().getID());
+    }
+
+    /**
+     * @return a list of unique ids for the state nodes that make up the conditions
+     */
+    @Override
+	public List<String> getConditions() {
+        return m_siteModel.getConditions();
+    }
 
 
 	// *****************************************
@@ -736,65 +891,99 @@ public class TreeLikelihoodExt extends TreeLikelihood {
 //
 //    }
 //    
-//    public void updatePatternListExt() {
+    public void updatePatternLis() {
+
+///////////////////
+//    	if (node.isLeaf()) {
+//            HaplotypeModel data = haplotypeInput.get();
+//            int i;
+//            int[] states = new int[patternCount];
+//            int taxonIndex = getTaxonIndex(node.getID(), data);
+//            for (i = 0; i < patternCount; i++) {
+//                int code = data.getPattern(taxonIndex, i);
+//                int[] statesForCode = data.getDataType().getStatesForCode(code);
+//                if (statesForCode.length==1)
+//                    states[i] = statesForCode[0];
+//                else
+//                    states[i] = code; // Causes ambiguous states to be ignored.
+//            }
+//            likelihoodCore.setNodeStates(node.getNr(), states);
 //
-////        this.patternList = sitePatternExt;
-////patternList
+//        } else {
+//            setStates(node.getLeft(), patternCount);
+//            setStates(node.getRight(), patternCount);
+//        }
+    	
+    	
+    	/////////////////
 //		sitePatternExt.updateAlignment(haplotypeModel);
-//		
-//        OperationRecord record = haplotypeModel.getOperationRecord();
-//		int haplotypeIndex = record.getSpectrumIndex();
-//		int updateExternalNodeIndex = treeTaxonIndex[haplotypeIndex];
-//
+		System.out.println("TreeLikeExt UpdatePattern" +"\t"+ hasDirt);
+        OperationRecord record = haplotypeModel.getOperationRecord();
+		int haplotypeIndex = record.getSpectrumIndex();
+		int updateExternalNodeIndex = treeTaxonIndex[haplotypeIndex];
+
 //		updateNode[updateExternalNodeIndex] = true;
-//		int site;
-//
-//		likelihoodCoreA.getNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
-//
-//		switch (record.getOperation()) {
-//		case SINGLE:
-//			site = record.getSingleIndex();
-////			System.out.println(patternList.getPatternState(haplotypeIndex, site));
-////			System.out
-////					.println(haplotypeModel.getState(haplotypeIndex, site));;
-////					System.out.println();
-////			System.out.println(tempstates.length);
+		int site;
+
+		likelihoodCore.getNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
+
+		switch (record.getOperation()) {
+		case SINGLE:
+			site = record.getSingleIndex();
+//			System.out.println(patternList.getPatternState(haplotypeIndex, site));
+//			System.out
+//					.println(haplotypeModel.getState(haplotypeIndex, site));;
+//					System.out.println();
+//			System.out.println(tempstates.length);
+			
+			
+                int code = haplotypeModel.getPattern(haplotypeIndex, site);
+//                int[] statesForCode = data.getDataType().getStatesForCode(code);
+//                if (statesForCode.length==1)
+//                    states[site] = statesForCode[0];
+//                else
+
+                states[updateExternalNodeIndex][site] = code; // Causes ambiguous states to be ignored.
+
+
+			
 //			states[updateExternalNodeIndex][site] = patternList.getPatternState(haplotypeIndex, site);
-//			likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
-////			likelihoodCoreExt2.setNodeStatesSite(updateExternalNodeIndex, states[updateExternalNodeIndex], site);
-//			
-//			break;
-//		case MULTI:
-//			int[] sites = record.getAllSiteIndexs();
-//			for (int s : sites) {
+			likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
+			
+//			likelihoodCoreExt2.setNodeStatesSite(updateExternalNodeIndex, states[updateExternalNodeIndex], site);
+			System.out.println("SET: "+"\t"+updateExternalNodeIndex +"\t"+site +"\t"+states[updateExternalNodeIndex][site]);
+			break;
+		case MULTI:
+			int[] sites = record.getAllSiteIndexs();
+			for (int s : sites) {
 //				states[updateExternalNodeIndex][s] = patternList.getPatternState(haplotypeIndex, s);
-////				likelihoodCoreExt2.setNodeStatesSite(updateExternalNodeIndex, states[updateExternalNodeIndex], s);
-//			}
-//			likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
-//			
-////			setStates(likelihoodCore, patternList, haplotypeIndex, updateExternalNodeIndex);
-//			break;
-//		case COLUMN:
-//			site = record.getSingleIndex();
-//			for (int h = 0; h < haplotypeModel.getHaplotypeCount(); h++) {
+//				likelihoodCoreExt2.setNodeStatesSite(updateExternalNodeIndex, states[updateExternalNodeIndex], s);
+			}
+			likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
+			
+//			setStates(likelihoodCore, patternList, haplotypeIndex, updateExternalNodeIndex);
+			break;
+		case COLUMN:
+			site = record.getSingleIndex();
+			for (int h = 0; h < haplotypeModel.getHaplotypeCount(); h++) {
 //				updateExternalNodeIndex = treeTaxonIndex[h];
 ////				likelihoodCoreA.
 //				updateNode[updateExternalNodeIndex] = true;
 //				likelihoodCoreA.getNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
 //				states[updateExternalNodeIndex][site] = patternList.getPatternState(h, site);
 //				likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
-//
-//			}
-//			
-//			
-//			break;
-//		case RECOMBINATION:
-//			int[] twoPositions = record.getRecombinationPositionIndex();
-//			int[] twoHapIndexs = record.getRecombinationSpectrumIndex();
-//			for (int h : twoHapIndexs) {
-//
-//		        updateExternalNodeIndex = treeTaxonIndex[h];
-//
+
+			}
+			
+			
+			break;
+		case RECOMBINATION:
+			int[] twoPositions = record.getRecombinationPositionIndex();
+			int[] twoHapIndexs = record.getRecombinationSpectrumIndex();
+			for (int h : twoHapIndexs) {
+
+		        updateExternalNodeIndex = treeTaxonIndex[h];
+
 //				updateNode[updateExternalNodeIndex] = true;
 //				likelihoodCoreA.getNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
 //			
@@ -802,25 +991,25 @@ public class TreeLikelihoodExt extends TreeLikelihood {
 //					states[updateExternalNodeIndex][s] = patternList.getPatternState(h, s);
 //				}
 //				likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
-//
-//			}
-//			break;
-//		case FULL:
-//			System.out.println("updatePatternListExt() Full"); //TODO: redo this
+
+			}
+			break;
+		case FULL:
+			System.out.println("updatePatternListExt() Full"); //TODO: redo this
 //			updatePatternListExt(sitePatternExt);
+			break;
+		default:
 //			break;
-//		default:
-////			break;
-//			throw new IllegalArgumentException("Invalid operation type:"+record.getOperation());
+			throw new IllegalArgumentException("Invalid operation type:"+record.getOperation());
+		}
+//		int[] sites = record.getAllSiteIndexs();
+//		((AbstractLikelihoodCore)likelihoodCore).getNodeStates(updateExternalNodeIndex, tempstates);
+//		for (int s : sites) {
+//			tempstates[s] = patternList.getPatternState(haplotypeIndex, s);
 //		}
-////		int[] sites = record.getAllSiteIndexs();
-////		((AbstractLikelihoodCore)likelihoodCore).getNodeStates(updateExternalNodeIndex, tempstates);
-////		for (int s : sites) {
-////			tempstates[s] = patternList.getPatternState(haplotypeIndex, s);
-////		}
-//		
-//
-//	}
+		
+
+	}
 //
 	
 	

@@ -40,7 +40,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	
 	public static final String TAXON_PREFIX = "hap_";
 	
-	private static final boolean DEBUG = false;
+	private static final boolean DEBUG = true;
 
 	@Deprecated
 	private static final String MODEL_NAME = "HaplotypeModel";
@@ -131,7 +131,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 ////				}
 ////            }
 //        }
-        m_dataType = DATA_TYPE;
+//        m_dataType = DATA_TYPE;
         // initialize the sequence list
         if (sequenceInput.get().size() > 0) {
             sequences = sequenceInput.get();
@@ -154,6 +154,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 //        }
         Log.info.println(toString(false));
     
+        operationRecord = new OperationRecord();
 		
 	}
 	
@@ -227,8 +228,72 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 
 	}
 	
+    @Override
+    protected boolean requiresRecalculation() {
+        // do explicit check whether any of the non-substitution model parameters changed
+    	return this.somethingIsDirty();
+//        if (categoryCount > 1) {
+//            if (shapeParameter != null && shapeParameter.somethingIsDirty() ||
+//                    muParameter.somethingIsDirty() ||
+//                    invarParameter.somethingIsDirty()) {
+//                ratesKnown = false;
+//            }
+//        } else {
+//            if (muParameter.somethingIsDirty() || !hasPropInvariantCategory && invarParameter.somethingIsDirty()) {
+//                ratesKnown = false;
+//            }
+//        }
+////    	ratesKnown = false;
+//        // we only get here if something is dirty in its inputs, so always return true
+//        return true;
+    	
+//    	@Override
+//        protected boolean requiresRecalculation() {
+//            // we only get here if something is dirty
+//            updateMatrix = true;
+//            updateEigen = true;
+//            return true;
+//        }
+    }
+	///////////////OperationReocrd
 
-	
+	public void resetOperation() {
+		operationRecord.setOperationType(OperationType.FULL);
+	}
+
+	public OperationRecord getOperationRecord() {
+		return operationRecord;
+	}
+
+	public OperationType getOperation() {
+		return operationRecord.getOperation();
+	}
+
+	public void setOperationRecord(OperationType op,
+			int[] twoSpectrumIndex, int[] swapPositionIndex) {
+		//Recom
+		operationRecord.setRecord(op, twoSpectrumIndex, swapPositionIndex);
+	}
+
+	public void setOperationRecord(OperationType op,
+			int spectrumIndex, int siteIndex) {
+		//Single
+		operationRecord.setRecord(op, spectrumIndex, siteIndex);
+	}
+
+	public void setOperationRecord(OperationType op,
+			int spectrumIndex, int[] siteIndexs) {
+		//Multi
+		operationRecord.setRecord(op, spectrumIndex, siteIndexs);
+
+	}
+
+	public void setOperationRecord(OperationType op,
+			int[] spectrumIndexs, int siteIndex) {
+		//Column, subcolumn
+		operationRecord.setRecord(op, spectrumIndexs, siteIndex);
+
+	}
 //	@Override
 //	public String toString(){
 //
@@ -263,7 +328,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		
 	}
 	
-	protected void storeState() {
+	public void storeState() {
 
 		OperationType operation = operationRecord.getOperation();
 		int haplotypeIndex;
@@ -286,6 +351,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 			siteIndex = operationRecord.getSingleIndex();
 			haplotype = getHaplotype(haplotypeIndex);
 			haplotype.storeState(siteIndex);
+
 			break;
 
 		case MULTI:
@@ -635,14 +701,26 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	@Override
 	protected void store() {
 		// TODO Auto-generated method stub
+//		storeState();
+		System.out.println("store() "+this.getClass().getName());
 		
 	}
 
 	@Override
 	public void restore() {
-		// TODO Auto-generated method stub
+		System.out.println("restore() "+this.getClass().getName());
+		restoreState();
 		
 	}
+	public void setOperationType(OperationType op) {
+		operationRecord.setOperationType(op);
+		
+	}
+	public void updateState(int hapIndex, int siteIndex, int newState) {
+		sitePatterns[siteIndex][hapIndex] = newState;
+		
+	}
+	
 	
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////XXX not used after this

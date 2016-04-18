@@ -72,7 +72,7 @@ public abstract class AbstractAlignmentModel extends AbstractModel implements Ta
 
 
 	public void resetOperation() {
-		operationRecord.setOperation(OperationType.FULL);
+		operationRecord.setOperationType(OperationType.FULL);
 	}
 
 	public OperationRecord getOperationRecord() {
