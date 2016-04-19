@@ -65,20 +65,21 @@ public class HaplotypeBaseSingleOperator extends Operator {
 //		int hapIndex = 1;
 //		int siteIndex = 1;
 
-		siteIndex %= 4;
-		Haplotype haplotype = hap.getHaplotype(hapIndex);
-		int oldState = haplotype.getState(siteIndex);
-		int newState = getNextState();
+		siteIndex %= 10;
+//		Haplotype haplotype = hap.getHaplotype(hapIndex);
+//		int oldState = haplotype.getState(siteIndex);
+		int oldState = hap.getPattern(hapIndex, siteIndex);
+		int newState = getNextDiffBase(oldState);
 //		char newChar = 'A';
 //		newChar = '-';
-		
+//		System.out.println("HaplotypeBaseSingleOperator: " + oldState +"\t"+ newState);
 		hap.updateState(hapIndex, siteIndex, newState);
 
-		haplotype.setStateAt(siteIndex, newState);
+//		haplotype.setStateAt(siteIndex, newState);
 		hap.setOperationRecord(OP, hapIndex, siteIndex);
 
 //		hap.startEditing(this);
-		hap.storeState();// call explicitely, should be able to change this
+//		hap.storeState();// call explicitely, should be able to change this
 		return logq;
 	}
 
@@ -98,13 +99,13 @@ public class HaplotypeBaseSingleOperator extends Operator {
 		return OperationType.SINGLE;
 	};
 
-	public static char getNextDiffBase(int oldState) {
+	public static int getNextDiffBase(int oldState) {
 		int i = oldState;
 		do {
 			i = Randomizer.nextInt(4);
 		} while (i == oldState);
 	
-		return DNA_CHARS[i];
+		return i;
 	}
 
 	public static int getNextState() {

@@ -40,7 +40,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	
 	public static final String TAXON_PREFIX = "hap_";
 	
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
 	@Deprecated
 	private static final String MODEL_NAME = "HaplotypeModel";
@@ -155,6 +155,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
         Log.info.println(toString(false));
     
         operationRecord = new OperationRecord();
+        storeState();
 		
 	}
 	
@@ -321,11 +322,11 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 //	}
 	
 	protected void storeEverything(){
-		for (int i = 0; i < getHaplotypeCount(); i++) {
-			Haplotype haplotype = getHaplotype(i);
-			haplotype.storeState();
-			
-		}
+//		for (int i = 0; i < getHaplotypeCount(); i++) {
+//			Haplotype haplotype = getHaplotype(i);
+//			haplotype.storeState();
+//			
+//		}
 		for (int i = 0; i < haplotypeLength; i++) {
 			System.arraycopy(sitePatterns[i], 0, storedSitePatterns[i], 0, haplotypeCount);
 		}
@@ -341,7 +342,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		int[] siteIndexs;
 		Haplotype haplotype;
 		if (DEBUG) {
-			System.out.println("StoreState in HaplotypeModel:\t"+ operation);
+			System.out.println("====storeState() in HaplotypeModel:\t"+ operation);
 		}
 		switch (operation) {
 		case NONE:
@@ -354,8 +355,8 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		case SINGLE:
 			haplotypeIndex = operationRecord.getSpectrumIndex();
 			siteIndex = operationRecord.getSingleIndex();
-			haplotype = getHaplotype(haplotypeIndex);
-			haplotype.storeState(siteIndex);
+//			haplotype = getHaplotype(haplotypeIndex);
+//			haplotype.storeState(siteIndex);
 			storedSitePatterns[siteIndex][haplotypeIndex] = sitePatterns[siteIndex][haplotypeIndex];
 
 			break;
@@ -404,17 +405,17 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 		Haplotype haplotype;
 		int[] siteIndexs;
 		if (DEBUG) {
-			System.out.println("RestoreState in HaplotypeModel:\t" + operation);
+			System.out.println("====restoreState() in HaplotypeModel:\t" + operation);
 		}
 		switch (operation) {
 		
 		case NONE:
 			break;
 		case FULL:
-			for (int i = 0; i < getHaplotypeCount(); i++) {
-				haplotype = getHaplotype(i);
-				haplotype.restoreState();
-			}
+//			for (int i = 0; i < getHaplotypeCount(); i++) {
+//				haplotype = getHaplotype(i);
+//				haplotype.restoreState();
+//			}
 			for (int i = 0; i < haplotypeLength; i++) {
 				int[] tmp1 = sitePatterns[i];
 				sitePatterns[i] = storedSitePatterns[i];
@@ -427,8 +428,8 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 			int haplotypeIndex = operationRecord.getSpectrumIndex();
 			siteIndex = operationRecord.getSingleIndex();
 //			System.out.println(hapIndex +"\t"+ siteIndex);
-			haplotype = getHaplotype(haplotypeIndex);
-			haplotype.restoreState(siteIndex);
+//			haplotype = getHaplotype(haplotypeIndex);
+//			haplotype.restoreState(siteIndex);
 			sitePatterns[siteIndex][haplotypeIndex] = storedSitePatterns[siteIndex][haplotypeIndex];
 			break;
 		
@@ -714,14 +715,18 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	@Override
 	protected void store() {
 		// TODO Auto-generated method stub
-//		storeState();
-		System.out.println("store() "+this.getClass().getName());
+		storeState();
+		if (DEBUG) {
+			System.out.println("==store() "+this.getClass().getName());
+		}
 		
 	}
 
 	@Override
 	public void restore() {
-		System.out.println("restore() "+this.getClass().getName());
+		if (DEBUG) {
+			System.out.println("==restore() "+this.getClass().getName());
+		}
 		restoreState();
 		
 	}

@@ -113,8 +113,10 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
     
     @Override
     public void initAndValidate() {
-
-    	System.out.println("initAndValidate TreeLikelihoodExt with haplotypeModel");
+    	if (DEBUG) {
+		
+    		System.out.println("TreeLikelihoodExt initAndValidate() with haplotypeModel");
+    	}
     	haplotypeModel = haplotypeInput.get();
         // sanity check: alignment should have same #taxa as tree
         if (haplotypeInput.get().getTaxonCount() != treeInput.get().getLeafNodeCount()) {
@@ -252,7 +254,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
             }
 		}
 		haplotypeModel.setOperationType(OperationType.FULL);
-        store();
+//        store();
 		
 
     }
@@ -570,7 +572,10 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
      */
     @Override
     protected boolean requiresRecalculation() {
-    	System.out.println("TreeLikeliExt.java requiresRecalculation()");
+    	if (DEBUG) {
+		
+    		System.out.println("TreeLikelihoodExt.java requiresRecalculation()");
+    	}
         if (beagle != null) {
         	Log.err.println("Beagle calculation is NOT implemented!!");
 //            return beagle.requiresRecalculation();
@@ -581,8 +586,8 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 //        System.out.println(haplotypeModel.somethingIsDirty());
 //        System.out.println("M:"+m_siteModel.isDirtyCalculation());
         if (haplotypeInput.get().somethingIsDirty()) {
-        	updatePatternLis();
-            hasDirt = Tree.IS_FILTHY;
+        	updatePatternList();
+            hasDirt = Tree.IS_FILTHY;//TODO: check, maybe Tree.IS_DIRTY;
             return true;
         }
         
@@ -611,7 +616,9 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
         super.store();
         System.arraycopy(m_branchLengths, 0, storedBranchLengths, 0, m_branchLengths.length);
         
-        System.out.println("store() "+this.getClass().getName());
+        if (DEBUG) {
+			System.out.println("==store() "+this.getClass().getName());
+		}
         storeState();
     }
 
@@ -631,7 +638,9 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
         m_branchLengths = storedBranchLengths;
         storedBranchLengths = tmp;
         
-        System.out.println("restore() "+this.getClass().getName());
+        if (DEBUG) {
+			System.out.println("==restore() "+this.getClass().getName());
+		}
         restoreState();
     }
 
@@ -738,7 +747,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 			
 			OperationType operation = record.getOperation();
 	        if (DEBUG) {
-				System.out.println("StoreState in TreeLikelihoodExt:\t"+ operation);
+				System.out.println("====storeState() in TreeLikelihoodExt:\t"+ operation);
 			}
 			
 			switch (operation) {
@@ -820,7 +829,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 //		likelihoodCoreA.getNodeStates(updateExternalNodeIndex, tempstates);
         OperationType operation = record.getOperation();
         if (DEBUG ) {
-			System.out.println("RestoreState in TreeLikelihoodExt:\t"+ operation);
+			System.out.println("====restoreState() in TreeLikelihoodExt:\t"+ operation);
 		}
 		
 		switch (operation) {
@@ -884,8 +893,17 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 //			}
 			for (int h = 0; h < treeTaxonIndex.length; h++) {
 				updateExternalNodeIndex = treeTaxonIndex[h];
-				System.arraycopy(storedStates[updateExternalNodeIndex], 0, states[updateExternalNodeIndex], 0, haplotypeModel.getHaplotypeLength());
-				likelihoodCore.setNodeStates(updateExternalNodeIndex, storedStates[updateExternalNodeIndex]);
+				
+				
+				
+					int[] tmp = states[updateExternalNodeIndex];
+					states[updateExternalNodeIndex] = storedStates[updateExternalNodeIndex];
+					storedStates[updateExternalNodeIndex] = tmp;
+
+				
+				
+//				System.arraycopy(storedStates[updateExternalNodeIndex], 0, states[updateExternalNodeIndex], 0, haplotypeModel.getHaplotypeLength());
+				likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
 
 			}
 
@@ -899,7 +917,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 
     }
 //    
-    public void updatePatternLis() {
+    public void updatePatternList() {
 
 ///////////////////
 //    	if (node.isLeaf()) {
@@ -925,7 +943,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
     	
     	/////////////////
 //		sitePatternExt.updateAlignment(haplotypeModel);
-		System.out.println("TreeLikeExt UpdatePattern" +"\t"+ hasDirt);
+    	
         OperationRecord record = haplotypeModel.getOperationRecord();
 		int haplotypeIndex = record.getSpectrumIndex();
 		int updateExternalNodeIndex = treeTaxonIndex[haplotypeIndex];
@@ -935,6 +953,10 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 
 		likelihoodCore.getNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
 
+		if (DEBUG) {
+    		System.out.println("TreeLikelihoodExt.java UpdatePatternList()" +"\t"+ record.getOperation() +"\t"+hasDirt);
+    	}
+		
 		switch (record.getOperation()) {
 		case SINGLE:
 			site = record.getSingleIndex();
@@ -950,8 +972,9 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 //                if (statesForCode.length==1)
 //                    states[site] = statesForCode[0];
 //                else
-
-                states[updateExternalNodeIndex][site] = code; // Causes ambiguous states to be ignored.
+//			System.out.println(states[updateExternalNodeIndex][site] + "\t"
+//					+ storedStates[updateExternalNodeIndex][site] + "\t" + code);
+			states[updateExternalNodeIndex][site] = code; // Causes ambiguous states to be ignored.
 
 
 			
@@ -959,7 +982,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 			likelihoodCore.setNodeStates(updateExternalNodeIndex, states[updateExternalNodeIndex]);
 			
 //			likelihoodCoreExt2.setNodeStatesSite(updateExternalNodeIndex, states[updateExternalNodeIndex], site);
-			System.out.println("SET: "+"\t"+updateExternalNodeIndex +"\t"+site +"\t"+states[updateExternalNodeIndex][site]);
+//			System.out.println("SET: "+"\t"+updateExternalNodeIndex +"\t"+site +"\t"+states[updateExternalNodeIndex][site]);
 			break;
 		case MULTI:
 			int[] sites = record.getAllSiteIndexs();
@@ -1003,7 +1026,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
 			}
 			break;
 		case FULL:
-			System.out.println("updatePatternListExt() Full"); //TODO: redo this
+//			System.out.println("updatePatternListExt() Full"); //TODO: redo this
 //			updatePatternListExt(sitePatternExt);
 			break;
 		default:
