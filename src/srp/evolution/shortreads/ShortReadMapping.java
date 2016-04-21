@@ -6,25 +6,19 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.util.ArithmeticUtils;
+
+import com.google.common.primitives.Ints;
+
+import beast.evolution.alignment.Alignment;
+import beast.evolution.alignment.Sequence;
+import beast.evolution.datatype.DataType;
+import beast.evolution.datatype.Nucleotide;
+import beast.util.Randomizer;
 
 import srp.distributions.DirichletMultinomialDistribution;
 import srp.evolution.likelihood.AbstractShortReadsLikelihood;
 import srp.evolution.operator.haplotypes.AbstractHaplotypeOperator;
-import cern.colt.bitvector.BitVector;
-
-import com.google.common.primitives.Ints;
-import com.sun.org.apache.bcel.internal.generic.DNEG;
-
-import beast.evolution.alignment.Alignment;
-import beast.evolution.datatype.DataType;
-import beast.evolution.datatype.Nucleotide;
-import beast.evolution.alignment.Sequence;
-import beast.evolution.alignment.Taxon;
-import beast.util.Randomizer;
-//import java.util.BitSet;
 
 
 public class ShortReadMapping {
@@ -33,7 +27,7 @@ public class ShortReadMapping {
 	private static final DataType DATA_TYPE = new Nucleotide();
 	private static final double[] EQUAL_FREQ = new double[]{0.25, 0.5, 0.75, 1};
 	
-	public static final char[] DNA_CHARS = AbstractHaplotypeOperator.DNA_CHARS;
+	public static final char[] DNA_CHARS = {'A','C','G','T'};;
 	public static final double LOG_ERROR_RATE = AbstractShortReadsLikelihood.LOG_ERROR_RATE;
 	public static final double LOG_ONE_MINUS_ERROR_RATE = AbstractShortReadsLikelihood.LOG_ONE_MINUS_ERROR_RATE;
 
@@ -43,6 +37,7 @@ public class ShortReadMapping {
 	private static final int MIN_READ_COUNT = 2;
 	private static final boolean IS_MIN_PROPORTION = true;
 	private static final double LOW_VARIANCE_THRESHOLD = 0.05;
+	private static final String CODE_MAP = new Nucleotide().getCodeMap();
 	
 	private ArrayList<Integer>[] mapToSrp; // each [] = position, each ArrayList map to which read
 	
@@ -62,7 +57,6 @@ public class ShortReadMapping {
 	private String[] srpArray;
 	private int[][] mapToSrpArray;
 	private BitSet[] bitSetArray;
-	private BitVector[] bitVectorArray;
 	private int[] srpLength;
 	private char[][] srpChar2D;
 	private Integer[] allSrpLengthInteger;
@@ -104,13 +98,13 @@ public class ShortReadMapping {
 			setsOfAvailableChar[i] = new HashSet<Character>();
 		}
 		
-        int[][] frequencies = new int[fullHaplotypeLength][DATA_TYPE.getAmbiguousStateCount()];
+        int[][] frequencies = new int[fullHaplotypeLength][DATA_TYPE.getStateCount()+2];
 
         srpCountArray = new int[fullHaplotypeLength]['T'+1];
         srpCumFreqArray = new double[fullHaplotypeLength][4];
         
-		for (int i = 0; i < srpAlignment.getSequenceCount(); i++) {
-			Sequence s = srpAlignment.getSequence(i);
+		for (int i = 0; i < srpAlignment.getTaxonCount(); i++) {
+			Sequence s = srpAlignment.sequenceInput.get().get(i);
 			addSequence(s, setsOfAvailableChar, frequencies);
 		}
 		//post processing after created the basic framework
@@ -313,13 +307,13 @@ public class ShortReadMapping {
 
 	private void createBitSetArray() {
 		bitSetArray = new BitSet[mapToSrp.length];
-		bitVectorArray = new BitVector[mapToSrp.length];
+		
 		for (int i = 0; i < bitSetArray.length; i++) {
 			bitSetArray[i] = new BitSet(srpCount);
-			bitVectorArray[i] = new BitVector(srpCount);
+			
 			for (int s : mapToSrp[i]) {
 				bitSetArray[i].set(s);
-				bitVectorArray[i].set(s);
+				
 			}
 		}
 		
@@ -327,22 +321,21 @@ public class ShortReadMapping {
 	public BitSet getBitSet(int i){
 		return bitSetArray[i];
 	}
-	public BitVector getBitVector(int i){
-		return bitVectorArray[i];
-	}
+
+	@Deprecated
 	public int[][] getSrpState2DArray() {
 		String[] srpArray = getSrpArray();
 		int[][] state2DArray = new int[srpArray.length][fullHaplotypeLength];
 	
-		for (int i = 0; i < srpArray.length; i++) {
-			String srp = srpArray[i];
-			for (int j = 0; j < fullHaplotypeLength; j++) {
-				
-				char srpChar = srp.charAt(j);//TODO: change to char[] at hight lv or at ShortReadMapping
-				int state = DATA_TYPE.getState(srpChar);
-				state2DArray[i][j] = state;
-			}
-		}
+//		for (int i = 0; i < srpArray.length; i++) {
+//			String srp = srpArray[i];
+//			for (int j = 0; j < fullHaplotypeLength; j++) {
+//				
+//				char srpChar = srp.charAt(j);//TODO: change to char[] at hight lv or at ShortReadMapping
+//				int state = DATA_TYPE.string2state(srpChar+"");
+//				state2DArray[i][j] = state;
+//			}
+//		}
 	
 		return state2DArray;
 	}
@@ -469,8 +462,8 @@ public class ShortReadMapping {
         for (int i = 0; i < consensus.length; i++) {
             buffer.append(DATA_TYPE.getChar(    consensus[i] ));
         }
-        Sequence sequence = new Sequence(new Taxon("con"),buffer.toString());
-        sequence.setDataType(DATA_TYPE);
+        Sequence sequence = new Sequence("con",buffer.toString());
+//        sequence.setDataType(DATA_TYPE);
 //        System.out.println();
 //        System.err.println(sequence.getSequenceString());
 //        System.out.println();
@@ -488,7 +481,8 @@ public class ShortReadMapping {
 			for (int j = srp.getStart(); j < srp.getEnd(); j++) {
 				mapToSrp[j].add(srpCount);
 				char c = srp.getFullSrpCharAt(j);
-				int state = DATA_TYPE.getState(c);
+//				int state = DATA_TYPE.getState(c);
+				int state = CODE_MAP.indexOf(c);
 				if (c!= GAP){
 					setsOfAvailableChar[j].add(c);
 					frequencies[j][state] += 1;
@@ -586,12 +580,12 @@ public class ShortReadMapping {
 		
 		if (size != 0) {
 			
-			newChar = (char) chars[ MathUtils.nextInt(size) ];
+			newChar = (char) chars[ Randomizer.nextInt(size) ];
 //			System.out.println(newChar +"\t"+ size +"\t"+ Arrays.toString(chars));
 //			newChar= DNA_CHARS[ chars[ MathUtils.nextInt(size) ] ];
 		}
 		else{
-			newChar = DNA_CHARS[ MathUtils.nextInt(4) ];
+			newChar = DNA_CHARS[ Randomizer.nextInt(4) ];
 		}
 		
 		return newChar;
@@ -644,7 +638,7 @@ public class ShortReadMapping {
 			newChar = 'A';//FIXME: later, only accept ACGT no N at moment
 		}
 		else{
-			srpIndex = srpList[MathUtils.nextInt(srpList.length)];
+			srpIndex = srpList[Randomizer.nextInt(srpList.length)];
 			newChar = srpChar2D[srpIndex][0];
 		}
 		randChar[0] = newChar;
@@ -652,10 +646,10 @@ public class ShortReadMapping {
 		//FIXME: not very smart loop, just get things working
 		for (int s = 1; s < randChar.length; s++) {
 			int count = 0;
-			if(MathUtils.nextDouble() < switchSrpProb){
+			if(Randomizer.nextDouble() < switchSrpProb){
 					srpList = mapToSrpArray[s];
 					if(srpList.length!=0){
-						srpIndex = srpList[MathUtils.nextInt(srpList.length)];
+						srpIndex = srpList[Randomizer.nextInt(srpList.length)];
 					}
 //					state = 999;
 //					System.out.println(s +"\tnewSrp Prob: "+ srpIndex);
@@ -672,7 +666,7 @@ public class ShortReadMapping {
 							newChar = 'A';//FIX later, only accept ACGT no N at moment
 						}
 						else{
-							srpIndex = srpList[MathUtils.nextInt(srpList.length)];
+							srpIndex = srpList[Randomizer.nextInt(srpList.length)];
 							newChar = srpChar2D[srpIndex][s];
 							count++;
 						}
@@ -682,7 +676,7 @@ public class ShortReadMapping {
 				else{
 					newChar = srpChar2D[srpIndex][s];
 				}
-				state = Nucleotides.INSTANCE.getState(newChar);
+				state = CODE_MAP.indexOf(newChar);
 				
 			}
 			while(state>3);
@@ -717,7 +711,7 @@ public class ShortReadMapping {
 		int newChar = GAP;
 		int size = mapToSrp[pos].size();
 		if (size != 0) {
-			int srpIndex = mapToSrp[pos].get(MathUtils.nextInt(size));
+			int srpIndex = mapToSrp[pos].get(Randomizer.nextInt(size));
 			newChar = getShortReadCharAt(srpIndex, pos);
 		}
 		
@@ -732,7 +726,7 @@ public class ShortReadMapping {
 //		}
 //		System.out.println(siteTypesArray[pos] +"\t"+ Arrays.toString(srpCumFreqArray[pos]));
 
-		double d = MathUtils.nextDouble();
+		double d = Randomizer.nextDouble();
 		for (int i = 0; i < 3; i++) {
 			if (d <= srpCumFreqArray[pos][i]) {
 				return DNA_CHARS[i];
@@ -865,7 +859,7 @@ public class ShortReadMapping {
 //	
 	private static int nextDNAFromCumFreq(double[] cumFreq){
 		
-		double d = MathUtils.nextDouble();
+		double d = Randomizer.nextDouble();
 		for (int i = 0; i < cumFreq.length; i++) {
 			if (d <= cumFreq[i]) {
 				return DATA_TYPE.getChar(i); //TODO: test

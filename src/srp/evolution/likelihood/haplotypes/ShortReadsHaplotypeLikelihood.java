@@ -2,10 +2,13 @@ package srp.evolution.likelihood.haplotypes;
 
 //import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Random;
 
-import javafx.scene.shape.CullFace;
+//import javafx.scene.shape.CullFace;
 
 import javax.swing.text.TabableView;
 
@@ -14,7 +17,12 @@ import org.apache.commons.math3.distribution.BinomialDistribution;
 import org.apache.commons.math3.stat.StatUtils;
 import org.apache.commons.math3.util.ArithmeticUtils;
 
-import com.sun.org.glassfish.external.statistics.Stats;
+import beast.core.Input;
+import beast.core.State;
+import beast.core.Input.Validate;
+import beast.evolution.alignment.Sequence;
+
+//import com.sun.org.glassfish.external.statistics.Stats;
 
 
 
@@ -25,10 +33,10 @@ import com.sun.org.glassfish.external.statistics.Stats;
 
 
 //import dr.math.BigDecimalUtils;
-import dr.math.MathUtils;
-import dr.math.Polynomial;
-//import dr.math.Polynomial.BigDouble;
-import dr.math.distributions.NormalDistribution;
+//import dr.math.MathUtils;
+//import dr.math.Polynomial;
+////import dr.math.Polynomial.BigDouble;
+//import beast.math.distributions.NormalDistribution;
 //import srp.core.BigFunctions;
 import srp.evolution.OperationType;
 import srp.evolution.haplotypes.Haplotype;
@@ -43,8 +51,6 @@ import srp.evolution.shortreads.ShortReadMapping;
 
 
 public class ShortReadsHaplotypeLikelihood  extends AbstractShortReadsLikelihood {
-
-	private static final long serialVersionUID = 7438385718398999755L;
 
 	private static final boolean DEBUG = false;
 	
@@ -61,7 +67,11 @@ public class ShortReadsHaplotypeLikelihood  extends AbstractShortReadsLikelihood
 	
 
 //	private final double MIN_LOG_LIKELIHOOD;
-
+	public final Input<HaplotypeModel> haplotypeModelInput = new Input<>("haplotypeModel",
+			"haplotype model for short read likelihood");
+	
+	public final Input<ShortReadMapping> shortReadMappingInput = new Input<>("shortRead",
+			"Input ShortReadMapping class contains short read info");
 	
 
 	
@@ -98,6 +108,7 @@ public class ShortReadsHaplotypeLikelihood  extends AbstractShortReadsLikelihood
 		this.alignmentModel = haplotypeModel;
 
 		operationRecord = alignmentModel.getOperationRecord();
+		System.out.println(operationRecord.getOperation());
 //		multiType = MultiType.Array;
 		multiType = MultiType.BitSet;
 		
@@ -110,12 +121,12 @@ public class ShortReadsHaplotypeLikelihood  extends AbstractShortReadsLikelihood
 
 		likelihoodKnown = false;
 		
-		addModel(this.alignmentModel);
+//		addModel(this.alignmentModel);
 		
 		preprocessLikelihoodAlignmentMap();
 
 //		calculateSrpLikelihoodFull();//TODO FIX this? shouldn't needed
-		getLogLikelihood();
+		calculateLogP();
 				
 		storeEverything();
 //		this.alignmentModel.storeModelState();
@@ -126,6 +137,10 @@ public class ShortReadsHaplotypeLikelihood  extends AbstractShortReadsLikelihood
 		
 	}
 	
+    @Override
+    public void initAndValidate() {
+        // nothing to do
+    }
 	
 
 	private void preprocessLikelihoodAlignmentMap() {
@@ -671,6 +686,10 @@ globalCounter ++;
 
 
 	@Override
+	public void store(){
+		super.store();
+		storeState();
+	}
 	protected void storeState() {
 
 //		System.arraycopy(eachSrpLogLikelihood, 0, storedEachSrpLogLikelihood, 0, eachSrpLogLikelihood.length);
@@ -870,6 +889,10 @@ globalCounter ++;
 
 
 	@Override
+	public void restore(){
+		super.restore();
+		restoreState();
+	}
 	protected void restoreState() {
 //		long time1 = System.currentTimeMillis();
 		
@@ -1063,7 +1086,7 @@ globalCounter ++;
 	public double calculateSrpLikelihoodFullMaster() {
 
 
-//		System.out.println("calculateSrpLikelihoodMaster");
+		System.out.println("calculateSrpLikelihoodMaster: " + srpCount);
 		double logLikelihood = 0;
 		for (int i = 0; i < srpCount; i++) {
 			
@@ -1125,7 +1148,7 @@ globalCounter ++;
 		return logLikelihood;
 	}
 
-	@Override
+//	@Override
 	public void makeDirty() {
 		alignmentModel.resetOperation();
 		likelihoodKnown = false;
@@ -1175,6 +1198,30 @@ globalCounter ++;
 			}
 			
 		}
+
+////////////////////////////////////////////////////////////////////////////
+
+	@Override
+	public List<String> getArguments() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	@Override
+	public List<String> getConditions() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+
+	@Override
+	public void sample(State state, Random random) {
+		// TODO Auto-generated method stub
+		
+	}
 
 
 }

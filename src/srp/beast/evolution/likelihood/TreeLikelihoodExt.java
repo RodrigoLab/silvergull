@@ -120,7 +120,7 @@ public class TreeLikelihoodExt extends GenericTreeLikelihood {
     	haplotypeModel = haplotypeInput.get();
         // sanity check: alignment should have same #taxa as tree
         if (haplotypeInput.get().getTaxonCount() != treeInput.get().getLeafNodeCount()) {
-        	System.out.println("aoeu2" + haplotypeInput.get().getTaxonCount() +"\t"+ treeInput.get().getLeafNodeCount());
+        	System.out.println("aoeu2: " + haplotypeInput.get().getTaxonCount() +"\t"+ treeInput.get().getLeafNodeCount());
             throw new IllegalArgumentException("The number of nodes in the tree does not match the number of sequences");
         }
         beagle = null;

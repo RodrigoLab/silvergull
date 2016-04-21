@@ -10,20 +10,22 @@ import java.util.Set;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import beast.evolution.datatype.Nucleotide;
 import srp.dr.evolution.datatype.ShortReads;
 import srp.evolution.OperationRecord;
 import srp.evolution.OperationType;
 import srp.evolution.shortreads.ShortReadMapping;
-import dr.evolution.datatype.DataType;
-import dr.inference.model.AbstractModelLikelihood;
-import dr.inference.model.Model;
-import dr.inference.model.Variable;
-import dr.inference.model.Variable.ChangeType;
+import beast.core.Distribution;
+import beast.evolution.datatype.DataType;
+//import dr.inference.model.AbstractModelLikelihood;
+//import dr.inference.model.Model;
+//import dr.inference.model.Variable;
+//import dr.inference.model.Variable.ChangeType;
 
-public abstract class AbstractShortReadsLikelihood extends
-		AbstractModelLikelihood {
+public abstract class AbstractShortReadsLikelihood extends Distribution {
+//		AbstractModelLikelihood {
 
-	private static final long serialVersionUID = 2079474866153379297L;
+//	private static final long serialVersionUID = 2079474866153379297L;
 	public static final double ERROR_RATE = 0.0107;
 	public static final double NOT_ERROR_RATE = 1-ERROR_RATE;
 	public static final double LOG_ERROR_RATE = Math.log(ERROR_RATE);
@@ -32,10 +34,10 @@ public abstract class AbstractShortReadsLikelihood extends
 	public static final double C = 1e-100;
 	public static final double LOG_C = Math.log(C);
 
-	public static final DataType DATA_TYPE = ShortReads.INSTANCE;
+	public static final DataType DATA_TYPE = new Nucleotide();
 	public static final int STATE_COUNT = DATA_TYPE.getStateCount();//4
-	public static final int AMBIGUOUS_STATE_COUNT = DATA_TYPE.getAmbiguousStateCount();//18
-	public static final int GAP_STATE = DATA_TYPE.getGapState();;
+//	public static final int AMBIGUOUS_STATE_COUNT = DATA_TYPE.getAmbiguousStateCount();//18
+//	public static final int GAP_STATE = DATA_TYPE.getGapState();;
 	
 	private static final double EVALUATION_TEST_THRESHOLD = 1e-8;
 	public static final String SHORT_READ_LIKELIHOOD = "ShortReadsLikelihood";
@@ -77,7 +79,7 @@ public abstract class AbstractShortReadsLikelihood extends
 //	protected String[] srpArray;
 
 	public AbstractShortReadsLikelihood(String name, ShortReadMapping srpMap) {
-		super(name);
+//		super(name);
 		liS = new LikelihoodScaler(LOG_C);
 		preprocessShortReadMapping(srpMap);
 	}
@@ -216,34 +218,34 @@ public abstract class AbstractShortReadsLikelihood extends
 		return operationRecord.getOperation();
 	}
 	
-	protected static int getStateAtK(String fullSrp, int k) {
-		char srpChar = fullSrp.charAt(k);//TODO: change to char[] at hight lv or at ShortReadMapping
-		int state = DATA_TYPE.getState(srpChar);
-		
-		return state;
-	}
+//	protected static int getStateAtK(String fullSrp, int k) {
+//		char srpChar = fullSrp.charAt(k);//TODO: change to char[] at hight lv or at ShortReadMapping
+//		int state = DATA_TYPE.getState(srpChar);
+//		
+//		return state;
+//	}
 
+
+//	@Override
+//	protected void handleModelChangedEvent(Model model, Object object, int index) {
+//        
+//        likelihoodKnown = false;
+////		if(model instanceof AbstractHaplotypeModel){
+////        if(model instanceof AbstractAlignmentModel){
+////			operationRecord = ((AbstractAlignmentModel) model).getOperationRecord();
+////			System.out.println(operationRecord.getOperation());
+////		}
+//	}
+
+//	@SuppressWarnings("rawtypes")
+//	@Override
+//	protected void handleVariableChangedEvent(Variable variable, int index,
+//			ChangeType type) {
+//		System.err.println("Call handleVariableChangedEvent in SpectrumAlignmentModel");
+//	}
 
 	@Override
-	protected void handleModelChangedEvent(Model model, Object object, int index) {
-        
-        likelihoodKnown = false;
-//		if(model instanceof AbstractHaplotypeModel){
-//        if(model instanceof AbstractAlignmentModel){
-//			operationRecord = ((AbstractAlignmentModel) model).getOperationRecord();
-//			System.out.println(operationRecord.getOperation());
-//		}
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Override
-	protected void handleVariableChangedEvent(Variable variable, int index,
-			ChangeType type) {
-		System.err.println("Call handleVariableChangedEvent in SpectrumAlignmentModel");
-	}
-
-	@Override
-	public double getLogLikelihood() {
+	public double calculateLogP() {
 	
 		if (!likelihoodKnown) {
 			logLikelihood = calculateLogLikelihood();
@@ -253,18 +255,18 @@ public abstract class AbstractShortReadsLikelihood extends
 	}
 
 
-	@Override
-	public Model getModel() {
-		return this;
-	
-	}
+//	@Override
+//	public Model getModel() {
+//		return this;
+//	
+//	}
 
-	@Override
-	public Element createElement(Document d) {
-		throw new RuntimeException("Not implemented yet!");
-	}
+//	@Override
+//	public Element createElement(Document d) {
+//		throw new RuntimeException("Not implemented yet!");
+//	}
 
-	@Override
+//	@Override
 	protected void acceptState() {
 		//Do nothing
 	}

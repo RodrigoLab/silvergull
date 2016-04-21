@@ -478,7 +478,9 @@ public abstract class AbstractHaplotypeModel extends StateNode {
         //if (taxonsetInput.get() != null) {
         //	return taxonsetInput.get().getTaxonCount();
         //}
-        return taxaNames.size();
+//        return taxaNames.size();
+    	//FIXME:!! change back to   return taxaNames.size();
+    	return haplotypeCount;
     }
 
 //    /**

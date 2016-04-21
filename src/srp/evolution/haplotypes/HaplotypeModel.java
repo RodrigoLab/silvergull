@@ -137,14 +137,14 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
             sequences = sequenceInput.get();
         } else {
             // alignment defined by a map of id -> sequence
-        	java.util.Map<String, String> map = null;
-            List<String> taxa = new ArrayList<>();
-            taxa.addAll(map.keySet());
-            sequences.clear();
-            for (String key : taxa) {
-                String sequence = map.get(key);
-                sequences.add(new Sequence(key, sequence));
-            }
+//        	java.util.Map<String, String> map = null;
+//            List<String> taxa = new ArrayList<>();
+//            taxa.addAll(map.keySet());
+//            sequences.clear();
+//            for (String key : taxa) {
+//                String sequence = map.get(key);
+//                sequences.add(new Sequence(key, sequence));
+//            }
         }
 
         // initialize the alignment from the given list of sequences
@@ -173,6 +173,7 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 	//TODO: What is a good starting point?
 	public HaplotypeModel(int noOfRecoveredHaplotype, ShortReadMapping srpMap) {
 			this(noOfRecoveredHaplotype, srpMap.getLength());
+			
 			this.srpMap = srpMap;
 			for (int i = 0; i < haplotypeCount; i++) {
 				char[] randHap = this.srpMap.getSemiRandHaplotype2();
@@ -182,11 +183,14 @@ public class HaplotypeModel extends AbstractHaplotypeModel  {
 //				for (int s = 0; s < sequenceLength; s++) {
 //					haplotype.setCharAt(s, randHap[s]);
 //				}
+				System.out.println(i +"\t"+ randHap);
 				haplotype.setSequenceString(randHap);
 				setHaplotype(i, haplotype);
-				
+				Sequence seq = new Sequence("hap_"+i, String.valueOf(randHap));
+				sequences.add(seq);
 			}
-			
+//			initializeWithSequenceList(sequences, true);
+			initAndValidate();
 	//		storeEverything();
 		}
 

@@ -258,19 +258,6 @@ public class TreeLikelihoodWithHaplotypeTest extends TestCase {
         logger.setInputValue("sanitiseHeaders", true);
         logger.initByName("logEvery", 1000);
         
-
-
-//        final public Input<String> fileNameInput = new Input<>("fileName", "Name of the file, or stdout if left blank");
-//
-//        final public Input<Integer> everyInput = new Input<>("logEvery", "Number of the samples logged", 1);
-//        final public Input<BEASTObject> modelInput = new Input<>("model", "Model to log at the top of the log. " +
-//                "If specified, XML will be produced for the model, commented out by # at the start of a line. " +
-//                "Alignments are suppressed. This way, the log file documents itself. ");
-//        final public Input<LOGMODE> modeInput = new Input<>("mode", "logging mode, one of " + Arrays.toString(LOGMODE.values()), LOGMODE.autodetect, LOGMODE.values());
-//        final public Input<SORTMODE> sortModeInput = new Input<>("sort", "sort items to be logged, one of " + Arrays.toString(SORTMODE.values()), SORTMODE.none, SORTMODE.values());
-//        final public Input<Boolean> sanitiseHeadersInput = new Input<>("sanitiseHeaders", "whether to remove any clutter introduced by Beauti" , false);
-
-        
         
         MCMC mcmc = new MCMC();
         mcmc.setInputValue("operator", opsList);

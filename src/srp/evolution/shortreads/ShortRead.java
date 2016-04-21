@@ -7,7 +7,7 @@ import beast.evolution.alignment.Sequence;
 
 public class ShortRead {
 
-	private static Pattern p = Pattern.compile("(\\.*)([ACGT*]+)(\\.*)");
+	private static Pattern p = Pattern.compile("(\\?*)([ACGT*]+)(\\?*)");
 	
 	private String fullSrp;
 	private String fragmentSrp;
